@@ -2,6 +2,7 @@ import { AddSessionTrigger } from "@/components/add-session-trigger";
 import { RecentSessions } from "@/components/recent-sessions";
 import { supabase } from "@/lib/supabase";
 import { LapChart } from "@/components/lap-chart";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
   const { data: sessions, error } = await supabase
@@ -12,6 +13,12 @@ export default async function DashboardPage() {
   if (error) {
     console.error("Supabase error:", error);
   }
+
+const { data: { user } } = await supabase.auth.getUser();
+
+if (!user) {
+  redirect("/login");
+}
 
   const trackRecords =
   sessions?.reduce((acc: any, session: any) => {
@@ -312,6 +319,7 @@ const driverRecords =
 
         <div className="flex items-center gap-4">
           <AddSessionTrigger />
+          await supabase.auth.signOut();
 
           <p className="text-xs text-zinc-500 tracking-widest uppercase">
             Race Analytics Platform
