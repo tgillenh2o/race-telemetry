@@ -7,6 +7,8 @@ import Link from "next/link";
 import type { Session } from "@/types/session";
 import { LogoutButton } from "@/components/logout-button";
 
+export const dynamic = "force-dynamic";
+
 /* ---------------- TYPES ---------------- */
 const {
   data: { user },
