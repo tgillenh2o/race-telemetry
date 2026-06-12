@@ -130,11 +130,16 @@ const {
   }));
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white
+bg-[radial-gradient(circle_at_top,rgba(255,0,0,0.12),transparent_35%)]">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-        <h1 className="text-xl font-bold">Race Dashboard</h1>
+      <h1 className="text-2xl font-black tracking-[0.25em] text-white">
+  <span className="text-red-500 drop-shadow-[0_0_18px_rgba(255,0,0,0.9)]">
+    STAGE
+  </span>
+  <span className="text-zinc-300"> / LINE</span>
+</h1>
 
         <div className="flex items-center gap-4">
           <AddSessionTrigger />
@@ -153,21 +158,54 @@ const {
 
         {/* STATS */}
         <div className="grid md:grid-cols-3 gap-4">
-          <div className="p-4 border border-white/10 rounded-xl">
+          <div className="
+p-5
+rounded-2xl
+border border-red-500/10
+bg-zinc-950/40
+backdrop-blur-md
+shadow-[0_0_25px_rgba(255,0,0,0.08)]
+hover:shadow-[0_0_35px_rgba(255,0,0,0.18)]
+transition-all duration-300
+"
             <p className="text-zinc-500 text-sm">Best Lap</p>
-            <p className="text-2xl font-mono text-red-400">
+            <p className="
+text-3xl
+font-mono
+font-bold
+text-red-400
+drop-shadow-[0_0_15px_rgba(255,0,0,0.7)]
+"
               {format(bestLap)}
             </p>
           </div>
 
-          <div className="p-4 border border-white/10 rounded-xl">
+          <div className="
+p-5
+rounded-2xl
+border border-red-500/10
+bg-zinc-950/40
+backdrop-blur-md
+shadow-[0_0_25px_rgba(255,0,0,0.08)]
+hover:shadow-[0_0_35px_rgba(255,0,0,0.18)]
+transition-all duration-300
+"
             <p className="text-zinc-500 text-sm">Average Lap</p>
             <p className="text-2xl font-mono">
               {format(avgLap)}
             </p>
           </div>
 
-          <div className="p-4 border border-white/10 rounded-xl">
+          <div className="
+p-5
+rounded-2xl
+border border-red-500/10
+bg-zinc-950/40
+backdrop-blur-md
+shadow-[0_0_25px_rgba(255,0,0,0.08)]
+hover:shadow-[0_0_35px_rgba(255,0,0,0.18)]
+transition-all duration-300
+"
             <p className="text-zinc-500 text-sm">Sessions</p>
             <p className="text-2xl font-mono">
               {safeSessions.length}
@@ -176,7 +214,20 @@ const {
         </div>
 
         {/* DRIVER LIST */}
-        <div className="flex flex-wrap gap-2">
+        <div className="
+px-4
+py-1.5
+rounded-full
+border border-red-500/20
+bg-red-500/5
+text-red-300
+text-xs
+tracking-wider
+shadow-[0_0_15px_rgba(255,0,0,0.12)]
+hover:bg-red-500/10
+hover:scale-105
+transition-all
+"
           {drivers.map((d) => (
             <div
               key={String(d)}
@@ -197,7 +248,17 @@ const {
             {Object.entries(trackRecords).map(([track, data]: any) => (
               <div
                 key={track}
-                className="p-4 border border-white/10 rounded-xl flex justify-between"
+                className="
+p-5
+rounded-2xl
+border border-white/5
+bg-zinc-950/40
+shadow-[0_0_30px_rgba(255,0,0,0.06)]
+hover:border-red-500/20
+hover:shadow-[0_0_40px_rgba(255,0,0,0.15)]
+transition-all duration-300
+flex justify-between items-center
+"
               >
                 <div>
                   <p className="font-semibold">{track}</p>
@@ -215,7 +276,13 @@ const {
         </div>
 
         {/* CHART */}
-        <div className="p-6 border border-white/10 rounded-xl">
+        <div className="
+p-6
+rounded-2xl
+border border-white/5
+bg-zinc-950/40
+shadow-[0_0_35px_rgba(255,0,0,0.08)]
+"
           <h2 className="text-sm text-zinc-500 uppercase">
             Lap Progression
           </h2>
