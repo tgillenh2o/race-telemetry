@@ -25,21 +25,20 @@ async function handleLogin(e: React.FormEvent) {
   setError("");
 
   const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  email,
+  password,
+});
 
+if (error) {
+  setError(error.message);
   setLoading(false);
+  return;
+}
 
-  if (error) {
-    setError(error.message);
-    return;
-  }
+// wait for session write
+await new Promise((r) => setTimeout(r, 300));
 
-  // wait for session to register
-  setTimeout(() => {
-    router.push("/");
-  }, 200);
+router.push("/");
 }
 
   return (
