@@ -177,10 +177,10 @@ if (previousSession) {
     previousSession.lap_times ?? []
   )
     .map(parseLap)
-    .filter(
-      (v): v is number =>
-        typeof v === "number"
-    );
+   .filter(
+  (v: number | null): v is number =>
+    typeof v === "number"
+);
 
   const previousBest =
     previousLaps.length > 0
