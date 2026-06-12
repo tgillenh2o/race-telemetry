@@ -42,7 +42,7 @@ export function EditSessionTrigger({
   async function handleSave() {
     const parsedLaps = lapTimes
       .split(",")
-      .map((l) => l.trim())
+      .map((l: string) => l.trim())
       .filter(Boolean);
 
     const { error } = await supabase
