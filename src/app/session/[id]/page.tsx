@@ -215,6 +215,50 @@ if (previousSession) {
 
   /* ---------------- INTELLIGENCE ---------------- */
 
+  /* ---------------- BADGES ---------------- */
+
+const { data: allSessions } = await supabase
+  .from("sessions")
+  .select("*")
+  .eq("user_id", user.id);
+
+const allBestLaps = (allSessions ?? [])
+  .flatMap((s) =>
+    (s.lap_times ?? [])
+      .map(parseLap)
+      .filter(
+        (
+          v: number | null
+        ): v is number =>
+          typeof v === "number"
+      )
+  );
+
+const overallBest =
+  allBestLaps.length > 0
+    ? Math.min(...allBestLaps)
+    : null;
+
+const isPersonalRecord =
+  bestLap !== null &&
+  overallBest !== null &&
+  bestLap <= overallBest;
+
+const consistencyScore =
+  laps.length > 1
+    ? Math.max(...laps) -
+      Math.min(...laps)
+    : null;
+
+const isConsistent =
+  consistencyScore !== null &&
+  consistencyScore < 2;
+
+const improvedSession =
+  intelligenceMessage.includes(
+    "faster"
+  );
+
   const consistency =
     laps.length > 1
       ? Math.max(...laps) -
@@ -384,6 +428,66 @@ if (previousSession) {
           </div>
 
         </div>
+        {/* BADGES */}
+
+<div className="flex flex-wrap gap-3">
+
+  {isPersonalRecord && (
+    <div
+      className="
+        rounded-full
+        border
+        border-yellow-500/20
+        bg-yellow-500/10
+        px-4
+        py-2
+        text-sm
+        font-semibold
+        text-yellow-300
+        shadow-[0_0_20px_rgba(255,200,0,0.15)]
+      "
+    >
+      🏁 PERSONAL RECORD
+    </div>
+  )}
+
+  {improvedSession && (
+    <div
+      className="
+        rounded-full
+        border
+        border-green-500/20
+        bg-green-500/10
+        px-4
+        py-2
+        text-sm
+        font-semibold
+        text-green-300
+      "
+    >
+      📈 IMPROVED PACE
+    </div>
+  )}
+
+  {isConsistent && (
+    <div
+      className="
+        rounded-full
+        border
+        border-blue-500/20
+        bg-blue-500/10
+        px-4
+        py-2
+        text-sm
+        font-semibold
+        text-blue-300
+      "
+    >
+      🎯 MOST CONSISTENT
+    </div>
+  )}
+
+</div>
 
         {/* SESSION INFO */}
 
