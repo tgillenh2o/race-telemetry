@@ -102,10 +102,14 @@ export function LapChart({ data }: Props) {
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: "12px",
             }}
-            formatter={(value: number, name: string) => {
-              if (name === "delta") return formatDelta(value);
-              return formatLapTime(value);
-            }}
+ formatter={(value, name) => {
+  const num = typeof value === "number" ? value : Number(value);
+
+  if (Number.isNaN(num)) return "";
+
+  if (name === "delta") return formatDelta(num);
+  return formatLapTime(num);
+}}
           />
 
           {/* 🟥 CURRENT LAP */}
