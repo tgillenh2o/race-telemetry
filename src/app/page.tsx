@@ -16,6 +16,9 @@ import { LogoutButton } from "@/components/logout-button";
 
 
 
+
+
+
 /* ---------------- HELPERS ---------------- */
 
 function parseLap(lap: string): number | null {
@@ -42,7 +45,9 @@ function format(sec: number | null) {
 
 export default async function DashboardPage() {
   
-  
+  const {
+  data: { user },
+} = await supabase.auth.getUser();
 
 
 
