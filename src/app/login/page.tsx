@@ -28,6 +28,7 @@ export default function LoginPage() {
 
   
 
+
 const {
   error,
 } = await supabase.auth.signInWithPassword({
@@ -36,9 +37,12 @@ const {
 });
 
 if (error) {
-  setError(error instanceof Error
-    ? error.message
-    : "Login failed");
+  setError(
+    error instanceof Error
+      ? error.message
+      : "Login failed"
+  );
+
   return;
 }
 
@@ -48,12 +52,11 @@ window.location.href = "/";
 
 
 
+
+
     setLoading(false);
 
-    if (error) {
-      setError(error.message);
-      return;
-    }
+
 
     router.push("/");
     router.refresh();
