@@ -29,12 +29,12 @@ export async function middleware(req: NextRequest) {
     path === "/login" ||
     path === "/register";
 
-  // 🚨 not logged in → block
+  // not logged in → block everything except public pages
   if (!session && !isPublic) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // 🚨 logged in → block login page
+  // logged in → block login page
   if (session && path === "/login") {
     return NextResponse.redirect(new URL("/", req.url));
   }
