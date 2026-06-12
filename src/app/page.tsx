@@ -34,7 +34,7 @@ function format(sec: number | null) {
 
 export default async function DashboardPage() {
   // ✅ SAFE USER FETCH (NO DUPLICATES)
- const supabase = createClient();
+ const supabase = await createClient();
 
 const { data, error: userError } =
   await supabase.auth.getUser();
