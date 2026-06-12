@@ -5,8 +5,16 @@ import { supabase } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Session } from "@/types/session";
+import { LogoutButton } from "@/components/logout-button";
 
 /* ---------------- TYPES ---------------- */
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) {
+  redirect("/login");
+}
 
 
 
@@ -137,9 +145,7 @@ export default async function DashboardPage() {
 
   /* ---------------- LOGOUT HANDLER (CLIENT SIDE NEEDED) ---------------- */
 
-  // NOTE:
-  // We do NOT call supabase.auth.signOut here.
-  // That MUST live in a client component (button).
+  <LogoutButton />
 
   /* ---------------- UI ---------------- */
 
