@@ -13,29 +13,34 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleLogin(
+  e: React.FormEvent
+) {
+  e.preventDefault();
 
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({
+  const { error } =
+    await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
+  if (error) {
+    setError(error.message);
     setLoading(false);
-
-    if (error) {
-      setError(error.message);
-      return;
-    }
-
-    // let Supabase write session first
-    await new Promise((r) => setTimeout(r, 300));
-
-    window.location.href = "/";
+    return;
   }
+
+  // IMPORTANT:
+  // wait for Supabase session persistence
+  await new Promise((resolve) =>
+    setTimeout(resolve, 1000)
+  );
+
+  window.location.href = "/";
+}
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
@@ -43,7 +48,7 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold">Sign In</h1>
 
         <p className="mt-2 text-sm text-zinc-500">
-          Access your telemetry dashboard
+          Access your Stage/Line dashboard
         </p>
 
         <form onSubmit={handleLogin} className="mt-6 space-y-4">
