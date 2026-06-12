@@ -80,14 +80,15 @@ export default async function DashboardPage() {
 
       const best = Math.min(...laps);
 
-      const existing = acc[session.track_name];
+      const trackKey = session.track_name ?? "Unknown Track";
+      const existing = acc[trackKey];
 
       if (!existing || best < existing.bestLap) {
-        acc[session.track_name] = {
-          bestLap: best,
-          vehicle: session.vehicle,
-          sessionId: session.id,
-        };
+        acc[trackKey] = {
+  bestLap,
+  vehicle: session.vehicle,
+  sessionId: session.id,
+};
       }
 
       return acc;
