@@ -1,38 +1,29 @@
 
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-
-  const supabase = createMiddlewareClient({
-    req,
-    res,
-  });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const token =
+    req.cookies.get("sb-access-token");
 
   const isLoginPage =
     req.nextUrl.pathname.startsWith("/login");
 
   // NOT LOGGED IN
-  if (!session && !isLoginPage) {
+  if (!token && !isLoginPage) {
     return NextResponse.redirect(
       new URL("/login", req.url)
     );
   }
 
-  // ALREADY LOGGED IN
-  if (session && isLoginPage) {
+  // LOGGED IN
+  if (token && isLoginPage) {
     return NextResponse.redirect(
       new URL("/", req.url)
     );
   }
 
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {
