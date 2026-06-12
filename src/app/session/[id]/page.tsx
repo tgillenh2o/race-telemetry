@@ -68,6 +68,14 @@ export default async function SessionPage({
 
   const typed = session as Session;
 
+const typedSession = {
+  ...session,
+  event_name: session.event_name ?? "",
+  track_name: session.track_name ?? "",
+  vehicle: session.vehicle ?? "",
+  session_date: session.session_date ?? "",
+};
+
   // ---------------- LAPS ----------------
 
   const laps: number[] =
@@ -147,7 +155,7 @@ export default async function SessionPage({
         />
       </div>
 
-      <SessionCompare sessionA={typed} allSessions={[]} />
+      <SessionCompare sessionA={typedSession} allSessions={[]} />
 
     </div>
   );

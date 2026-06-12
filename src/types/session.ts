@@ -1,11 +1,11 @@
 export type Session = {
   id: string;
 
-  event_name: string;
-  track_name: string;
-  session_date: string;
+  event_name: string | null;
+  track_name: string | null;
+  session_date: string | null;
 
-  vehicle: string;
+  vehicle: string | null;
 
   notes: string | null;
   weather: string | null;
