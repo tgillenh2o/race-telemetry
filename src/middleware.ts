@@ -19,18 +19,22 @@ export async function middleware(req: NextRequest) {
     }
   );
 
+  // 🔥 CRITICAL FIX: THIS FORCES SESSION REFRESH
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const isLoginPage = req.nextUrl.pathname === "/login";
-  const isRegisterPage = req.nextUrl.pathname === "/register";
+  const path = req.nextUrl.pathname;
 
-  if (!user && !isLoginPage && !isRegisterPage) {
+  const isPublic = path === "/login" || path === "/register";
+
+  // ❌ no session → block
+  if (!session && !isPublic) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  if (user && isLoginPage) {
+  // ❌ logged in → block login page
+  if (session && path === "/login") {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
