@@ -5,19 +5,6 @@ import { supabase } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Session } from "@/types/session";
-import { LogoutButton } from "@/components/logout-button";
-
-
-
-/* ---------------- TYPES ---------------- */
-
-
-
-
-
-
-
-
 
 /* ---------------- HELPERS ---------------- */
 
@@ -44,31 +31,26 @@ function format(sec: number | null) {
 /* ---------------- PAGE ---------------- */
 
 export default async function DashboardPage() {
-  
-  const {
-  data: { user },
-} = await supabase.auth.getUser();
+  // ✅ SAFE USER FETCH (NO DUPLICATES)
+  const { data, error: userError } = await supabase.auth.getUser();
+  const user = data?.user;
 
+  if (userError) {
+    console.error("Auth error:", userError);
+  }
 
+  // 🚨 HARD GUARD (prevents UUID crash)
+  if (!user?.id) {
+    redirect("/login");
+  }
 
-  
+  // SESSION QUERY (SAFE NOW)
+  const { data: sessions, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
-
-
-const {
-  data: { user },
-} = await supabase.auth.getUser();
-
-// 🚨 STOP HERE if no user
-if (!user?.id) {
-  redirect("/login");
-}
-
-const { data: sessions, error } = await supabase
-  .from("sessions")
-  .select("*")
-  .eq("user_id", user.id)
-  .order("created_at", { ascending: false });
   if (error) {
     console.error("Supabase error:", error);
   }
@@ -100,16 +82,16 @@ const { data: sessions, error } = await supabase
       if (!laps.length) return acc;
 
       const best = Math.min(...laps);
-
       const trackKey = session.track_name ?? "Unknown Track";
+
       const existing = acc[trackKey];
 
       if (!existing || best < existing.bestLap) {
         acc[trackKey] = {
-  bestLap,
-  vehicle: session.vehicle,
-  sessionId: session.id,
-};
+          bestLap: best, // ✅ FIXED (was bugged)
+          vehicle: session.vehicle,
+          sessionId: session.id,
+        };
       }
 
       return acc;
@@ -117,7 +99,7 @@ const { data: sessions, error } = await supabase
     {}
   );
 
-  /* ---------------- DRIVER LIST ---------------- */
+  /* ---------------- DRIVERS ---------------- */
 
   const drivers = [
     ...new Set(
@@ -149,16 +131,12 @@ const { data: sessions, error } = await supabase
     {}
   );
 
-  /* ---------------- CHART DATA ---------------- */
+  /* ---------------- CHART ---------------- */
 
   const chartData = allLaps.map((time, i) => ({
     lap: i + 1,
     time,
   }));
-
-  /* ---------------- LOGOUT HANDLER (CLIENT SIDE NEEDED) ---------------- */
-
-  <LogoutButton />
 
   /* ---------------- UI ---------------- */
 
@@ -189,108 +167,4 @@ const { data: sessions, error } = await supabase
         {/* KPI */}
         <div className="grid gap-4 md:grid-cols-3">
           <div className="p-5 border border-white/10 rounded-xl">
-            <p className="text-xs text-zinc-500 uppercase">Best</p>
-            <p className="text-2xl font-mono text-red-400">
-              {format(bestLap)}
-            </p>
-          </div>
-
-          <div className="p-5 border border-white/10 rounded-xl">
-            <p className="text-xs text-zinc-500 uppercase">Avg</p>
-            <p className="text-2xl font-mono">
-              {format(avgLap)}
-            </p>
-          </div>
-
-          <div className="p-5 border border-white/10 rounded-xl">
-            <p className="text-xs text-zinc-500 uppercase">Sessions</p>
-            <p className="text-2xl font-mono">
-              {safeSessions.length}
-            </p>
-          </div>
-        </div>
-
-        {/* DRIVER BUBBLES */}
-        <div className="flex flex-wrap gap-2">
-          <div className="px-3 py-1 text-xs border border-white/10 rounded-full text-zinc-400">
-            Drivers
-          </div>
-
-          {drivers.map((d) => (
-            <div
-              key={String(d)}
-              className="px-3 py-1 text-xs border border-red-500/20 rounded-full text-red-300"
-            >
-              {String(d)}
-            </div>
-          ))}
-        </div>
-
-        {/* TRACK RECORDS */}
-        <div>
-          <h2 className="text-xs uppercase tracking-widest text-zinc-500">
-            Track Records
-          </h2>
-
-          <div className="mt-4 grid gap-4">
-            {Object.entries(trackRecords).map(([track, data]: any) => (
-              <div
-                key={track}
-                className="p-5 border border-white/10 rounded-2xl"
-              >
-                <div className="flex justify-between">
-                  <div>
-                    <p className="font-semibold">{track}</p>
-                    <p className="text-sm text-zinc-500">
-                      {data.vehicle}
-                    </p>
-                  </div>
-
-                  <p className="font-mono text-red-400">
-                    {format(data.bestLap)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* LAP CHART */}
-        <div className="p-6 border border-white/10 rounded-2xl">
-          <h2 className="text-xs uppercase tracking-widest text-zinc-500">
-            Lap Progression
-          </h2>
-
-          <div className="mt-6">
-            <LapChart data={chartData} />
-          </div>
-        </div>
-
-        {/* RECENT */}
-        <RecentSessions sessions={safeSessions} />
-
-        {/* DRIVER STATS */}
-        <div>
-          <h2 className="text-xs uppercase tracking-widest text-zinc-500">
-            Driver Stats
-          </h2>
-
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {drivers.map((driver) => (
-              <div
-                key={String(driver)}
-                className="p-5 border border-white/10 rounded-2xl"
-              >
-                <p className="font-semibold">{String(driver)}</p>
-                <p className="text-sm text-zinc-500">
-                  PR: {format(driverRecords[String(driver)])}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </main>
-    </div>
-  );
-}
+            <p className="text-xs text-zinc-500 uppercase">Best
