@@ -55,12 +55,20 @@ export default async function DashboardPage() {
 
 
 
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+// 🚨 STOP HERE if no user
+if (!user?.id) {
+  redirect("/login");
+}
+
 const { data: sessions, error } = await supabase
   .from("sessions")
   .select("*")
-  .eq("user_id", user?.id)
+  .eq("user_id", user.id)
   .order("created_at", { ascending: false });
-
   if (error) {
     console.error("Supabase error:", error);
   }
