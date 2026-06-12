@@ -63,7 +63,7 @@ export default async function SessionPage({
   // AUTH
 
 // AUTH
-const supabase = createClient();
+const supabase = await createClient();
 
 const {
   data: { user },
