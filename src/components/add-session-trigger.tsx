@@ -18,6 +18,22 @@ export function AddSessionTrigger() {
 useEffect(() => {
   setMounted(true);
 }, []);
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+if (!user) throw new Error("Not logged in");
+
+await supabase.from("sessions").insert({
+  event_name,
+  track_name,
+  lap_times,
+  vehicle,
+  tire_pressure,
+  shock_setup,
+  weather,
+  user_id: user.id, // 🔥 CRITICAL LINE
+});
 
   const [eventName, setEventName] = useState("");
   const [trackName, setTrackName] = useState("");
