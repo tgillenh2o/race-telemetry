@@ -11,15 +11,15 @@ import { DeleteSessionButton } from "@/components/delete-session-button";
 type Session = {
   id: string;
   user_id: string;
-  lap_times: string[] | null;
-  track_name: string | null;
-  vehicle: string | null;
-  tire_pressure: string | null;
-  shock_setup: string | null;
-  weather: string | null;
-  driver_name?: string | null;
-  session_date?: string | null;
-  event_name?: string | null;
+  lap_times: string[];
+  track_name: string;
+  vehicle: string;
+  tire_pressure: string;
+  shock_setup: string;
+  weather: string;
+  driver_name: string;
+  session_date: string;
+  event_name: string;
 };
 
 function parseLap(lap: string): number | null {
