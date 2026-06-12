@@ -60,19 +60,23 @@ export default async function SessionPage({
 
   // AUTH
 
+// AUTH
 const {
   data: { user },
 } = await supabase.auth.getUser();
 
+// 🚨 BLOCK if no user
+if (!user) {
+  redirect("/login");
+}
 
-
-  // SESSION
-  const { data: session, error } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user?.id)
-    .single();
+// SESSION
+const { data: session, error } = await supabase
+  .from("sessions")
+  .select("*")
+  .eq("id", id)
+  .eq("user_id", user.id) // now safe (never undefined)
+  .single();
 
   if (error || !session) {
     return (
