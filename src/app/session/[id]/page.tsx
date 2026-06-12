@@ -60,6 +60,11 @@ export default async function SessionPage({
 
   // AUTH
 
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+
 
   // SESSION
   const { data: session, error } = await supabase
