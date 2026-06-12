@@ -27,18 +27,24 @@ export default function LoginPage() {
     setError("");
 
   
-const { error } =
-  await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+
+const {
+  error,
+} = await supabase.auth.signInWithPassword({
+  email,
+  password,
+});
 
 if (error) {
-  alert(error.message);
+  setError(error instanceof Error
+    ? error.message
+    : "Login failed");
   return;
 }
 
 window.location.href = "/";
+
+
 
 
 
