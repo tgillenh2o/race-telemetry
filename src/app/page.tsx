@@ -1,12 +1,13 @@
 import { AddSessionTrigger } from "@/components/add-session-trigger";
 import { RecentSessions } from "@/components/recent-sessions";
 import { LapChart } from "@/components/lap-chart";
-import { createClient } from "@/lib/supabase-server";
-import { redirect } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+
+
 import Link from "next/link";
 import type { Session } from "@/types/session";
 
-export const dynamic = "force-dynamic";
+
 
 /* ---------------- HELPERS ---------------- */
 
@@ -34,29 +35,14 @@ function format(sec: number | null) {
 
 export default async function DashboardPage() {
   // ✅ SAFE USER FETCH (NO DUPLICATES)
- const supabase = await createClient();
 
-const { data, error: userError } =
-  await supabase.auth.getUser();
-  
-  const user = data?.user;
-
-  if (userError) {
-    console.error("Auth error:", userError);
-  }
-
-  // 🚨 HARD GUARD (prevents UUID crash)
-  if (!user?.id) {
-    redirect("/login");
-  }
 
   /* ---------------- SESSION QUERY ---------------- */
 
-  const { data: sessions, error } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+ const { data: sessions, error } = await supabase
+  .from("sessions")
+  .select("*")
+  .order("created_at", { ascending: false });
 
   if (error) {
     console.error("Supabase error:", error);
