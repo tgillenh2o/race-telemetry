@@ -38,7 +38,7 @@ async function handleLogin(e: React.FormEvent) {
 
   // wait for session to register
   setTimeout(() => {
-    router.push("/dashboard");
+    router.push("/");
   }, 200);
 }
 
