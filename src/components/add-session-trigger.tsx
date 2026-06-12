@@ -81,61 +81,64 @@ export function AddSessionTrigger() {
   }
 
   return (
+  <div className="rounded-2xl border border-white/10 bg-zinc-900/40 p-4">
     <form
       onSubmit={handleSubmit}
-      className="flex flex-wrap gap-2"
+      className="grid gap-3 md:grid-cols-2"
     >
       <input
         name="event_name"
         placeholder="Event"
-        className="rounded border border-white/10 bg-black px-3 py-2 text-white"
+        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none"
       />
 
       <input
         name="track_name"
         placeholder="Track"
-        className="rounded border border-white/10 bg-black px-3 py-2 text-white"
+        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none"
       />
 
       <input
         name="vehicle"
         placeholder="Vehicle"
-        className="rounded border border-white/10 bg-black px-3 py-2 text-white"
+        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none"
       />
 
       <input
         name="tire_pressure"
         placeholder="Tire Pressure"
-        className="rounded border border-white/10 bg-black px-3 py-2 text-white"
+        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none"
       />
 
       <input
         name="shock_setup"
         placeholder="Shock Setup"
-        className="rounded border border-white/10 bg-black px-3 py-2 text-white"
+        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none"
       />
 
       <input
         name="weather"
         placeholder="Weather"
-        className="rounded border border-white/10 bg-black px-3 py-2 text-white"
+        className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none"
       />
 
-      <input
+      <textarea
         name="lap_times"
         placeholder="Lap Times (comma separated)"
-        className="rounded border border-white/10 bg-black px-3 py-2 text-white"
+        className="min-h-[120px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none md:col-span-2"
       />
 
       <button
         type="submit"
         disabled={loading}
-        className="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-400 disabled:opacity-50"
+        className="rounded-xl bg-red-500 py-3 font-semibold transition hover:bg-red-400 disabled:opacity-50 md:col-span-2"
       >
         {loading
           ? "Saving..."
           : "Add Session"}
       </button>
     </form>
+  </div>
+);
   );
 }
