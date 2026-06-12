@@ -1,5 +1,5 @@
 
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -7,6 +7,8 @@ import { LapChart } from "@/components/lap-chart";
 import { SessionCompare } from "@/components/session-compare";
 import { EditSessionTrigger } from "@/components/edit-session-trigger";
 import { DeleteSessionButton } from "@/components/delete-session-button";
+
+export const dynamic = "force-dynamic";
 
 type Session = {
   id: string;
@@ -61,6 +63,8 @@ export default async function SessionPage({
   // AUTH
 
 // AUTH
+const supabase = createClient();
+
 const {
   data: { user },
 } = await supabase.auth.getUser();
