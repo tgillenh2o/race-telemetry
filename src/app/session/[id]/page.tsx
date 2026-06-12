@@ -154,6 +154,65 @@ export default async function SessionPage({
     })
   );
 
+    /* ---------------- PREVIOUS SESSION ---------------- */
+
+const { data: previousSessions } = await supabase
+  .from("sessions")
+  .select("*")
+  .eq("user_id", user.id)
+  .neq("id", id)
+  .order("created_at", {
+    ascending: false,
+  })
+  .limit(1);
+
+const previousSession =
+  previousSessions?.[0];
+
+let intelligenceMessage =
+  "Not enough session data yet.";
+
+if (previousSession) {
+  const previousLaps = (
+    previousSession.lap_times ?? []
+  )
+    .map(parseLap)
+    .filter(
+      (v): v is number =>
+        typeof v === "number"
+    );
+
+  const previousBest =
+    previousLaps.length > 0
+      ? Math.min(...previousLaps)
+      : null;
+
+  if (
+    previousBest !== null &&
+    bestLap !== null
+  ) {
+    const delta =
+      previousBest - bestLap;
+
+    if (delta > 0) {
+      intelligenceMessage =
+        `You went ${delta.toFixed(
+          2
+        )} seconds faster than your previous session.`;
+    } else if (delta < 0) {
+      intelligenceMessage =
+        `You were ${Math.abs(
+          delta
+        ).toFixed(
+          2
+        )} seconds slower than your previous session.`;
+    } else {
+      intelligenceMessage =
+        "You matched your previous best lap exactly.";
+    }
+  }
+}
+
   /* ---------------- INTELLIGENCE ---------------- */
 
   const consistency =
@@ -442,6 +501,87 @@ export default async function SessionPage({
           </div>
 
         </div>
+
+        {/* SESSION INTELLIGENCE */}
+
+<div
+  className="
+    rounded-2xl
+    border
+    border-red-500/10
+    bg-zinc-950/40
+    p-6
+    shadow-[0_0_35px_rgba(255,0,0,0.08)]
+  "
+>
+  <div className="flex items-center justify-between">
+    <h2
+      className="
+        text-xs
+        uppercase
+        tracking-widest
+        text-zinc-500
+      "
+    >
+      Session Intelligence
+    </h2>
+
+    <div
+      className="
+        rounded-full
+        border
+        border-red-500/20
+        bg-red-500/10
+        px-3
+        py-1
+        text-[10px]
+        tracking-widest
+        text-red-300
+      "
+    >
+      RACE AI
+    </div>
+  </div>
+
+  <div className="mt-5 space-y-4">
+
+    <div>
+      <p className="text-zinc-500 text-sm">
+        Performance Delta
+      </p>
+
+      <p
+        className="
+          mt-1
+          text-lg
+          font-semibold
+          text-white
+        "
+      >
+        {intelligenceMessage}
+      </p>
+    </div>
+
+    <div
+      className="
+        rounded-xl
+        border
+        border-white/5
+        bg-black/30
+        p-4
+      "
+    >
+      <p className="text-sm text-zinc-400">
+        Session analysis compares your
+        latest performance against your
+        most recent logged session to
+        identify pace changes and setup
+        trends.
+      </p>
+    </div>
+
+  </div>
+</div>
 
         {/* NOTES */}
 
