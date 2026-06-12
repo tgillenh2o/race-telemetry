@@ -18,50 +18,29 @@ export default function LoginPage() {
   const [error, setError] =
     useState("");
 
-  async function handleLogin(
-    e: React.FormEvent
-  ) {
-    e.preventDefault();
+async function handleLogin(e: React.FormEvent) {
+  e.preventDefault();
 
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-  
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
+  setLoading(false);
 
-const {
-  error,
-} = await supabase.auth.signInWithPassword({
-  email,
-  password,
-});
-
-if (error) {
-  setError(
-    error instanceof Error
-      ? error.message
-      : "Login failed"
-  );
-
-  return;
-}
-
-window.location.reload();
-
-
-
-
-
-
-
-
-    setLoading(false);
-
-
-
-    router.push("/");
-    router.refresh();
+  if (error) {
+    setError(error.message);
+    return;
   }
+
+  // wait for session to register
+  setTimeout(() => {
+    router.push("/dashboard");
+  }, 200);
+}
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
