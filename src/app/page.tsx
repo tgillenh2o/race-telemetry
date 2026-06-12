@@ -14,19 +14,6 @@ const {
   data: { user },
 } = await supabase.auth.getUser();
 
-if (!user) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-black text-white">
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.location.href = '/login'
-          `,
-        }}
-      />
-    </div>
-  );
-}
 
 
 
@@ -56,6 +43,22 @@ function format(sec: number | null) {
 /* ---------------- PAGE ---------------- */
 
 export default async function DashboardPage() {
+
+   if (!user) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-black text-white">
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            window.location.href = '/login'
+          `,
+        }}
+      />
+    </div>
+  );
+}
+
+
   // 🔐 AUTH CHECK FIRST
   const {
     data: { user },
