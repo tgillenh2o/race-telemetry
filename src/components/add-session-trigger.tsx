@@ -1,5 +1,21 @@
 "use client";
 
+import { createSession } from "@/app/actions/sessions";
+
+export function AddSessionTrigger() {
+  async function handleSubmit(formData: FormData) {
+    await createSession(formData);
+  }
+
+  return (
+    <form action={handleSubmit}>
+      <button className="px-4 py-2 bg-red-500 text-white rounded">
+        Add Session
+      </button>
+    </form>
+  );
+}
+
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
