@@ -1,23 +1,27 @@
+```ts id="u1z4ho"
+import { NextRequest, NextResponse } from "next/server";
 
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+export function middleware(req: NextRequest) {
 
-export async function middleware(req: NextRequest) {
-  const token =
-    req.cookies.get("sb-access-token");
+  const hasSupabaseCookie =
+    req.cookies
+      .getAll()
+      .some((cookie) =>
+        cookie.name.startsWith("sb-")
+      );
 
   const isLoginPage =
     req.nextUrl.pathname.startsWith("/login");
 
   // NOT LOGGED IN
-  if (!token && !isLoginPage) {
+  if (!hasSupabaseCookie && !isLoginPage) {
     return NextResponse.redirect(
       new URL("/login", req.url)
     );
   }
 
   // LOGGED IN
-  if (token && isLoginPage) {
+  if (hasSupabaseCookie && isLoginPage) {
     return NextResponse.redirect(
       new URL("/", req.url)
     );
@@ -33,3 +37,4 @@ export const config = {
     "/login",
   ],
 };
+```
