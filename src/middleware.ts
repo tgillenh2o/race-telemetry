@@ -1,45 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 
-export function middleware() {
-  return NextResponse.next();
-}
+export function middleware(req: NextRequest) {
+  const token = req.cookies.get("sb-access-token")?.value;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => req.cookies.getAll(),
-        setAll: (cookies: any[]) => {
-          cookies.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
+  const { pathname } = req.nextUrl;
 
-  // 🔥 CRITICAL FIX: THIS FORCES SESSION REFRESH
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const isLogin = pathname === "/login";
+  const isRegister = pathname === "/register";
 
-  const path = req.nextUrl.pathname;
-
-  const isPublic = path === "/login" || path === "/register";
-
-  // ❌ no session → block
-  if (!session && !isPublic) {
+  // ❌ not logged in → force login
+  if (!token && !isLogin && !isRegister) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   // ❌ logged in → block login page
-  if (session && path === "/login") {
+  if (token && isLogin) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {
