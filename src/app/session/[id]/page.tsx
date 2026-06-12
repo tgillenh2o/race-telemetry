@@ -59,13 +59,7 @@ export default async function SessionPage({
   const { id } = await params;
 
   // AUTH
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
 
   // SESSION
   const { data: session, error } = await supabase

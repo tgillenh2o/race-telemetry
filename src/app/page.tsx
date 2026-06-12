@@ -48,9 +48,7 @@ export default async function DashboardPage() {
 
   
 
- const {
-  data: { user },
-} = await supabase.auth.getUser();
+
 
 const { data: sessions, error } = await supabase
   .from("sessions")
