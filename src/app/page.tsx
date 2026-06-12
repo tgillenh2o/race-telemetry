@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServer } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Session } from "@/types/session";
@@ -31,9 +31,11 @@ function format(sec: number | null) {
 /* ---------------- PAGE ---------------- */
 
 export default async function Page() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+ const supabase = createSupabaseServer();
+
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/login");
