@@ -39,9 +39,7 @@ if (!user) {
 
           return minutes * 60 + seconds;
         })
-        .filter(
-          (v): v is number => v !== null
-        ) ?? [];
+       .filter((v): v is number => typeof v === "number")
 
     if (!laps.length) return acc;
 
