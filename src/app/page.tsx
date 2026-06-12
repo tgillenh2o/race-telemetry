@@ -2,6 +2,7 @@ import { AddSessionTrigger } from "@/components/add-session-trigger";
 import { RecentSessions } from "@/components/recent-sessions";
 import { LapChart } from "@/components/lap-chart";
 import { supabase } from "@/lib/supabase";
+import { AuthGuard } from "@/components/auth-guard";
 
 
 import Link from "next/link";
@@ -134,6 +135,7 @@ export default async function DashboardPage() {
   /* ---------------- UI ---------------- */
 
   return (
+    <AuthGuard>
     <div className="min-h-screen bg-black text-white relative">
 
       {/* HEADER */}
@@ -263,5 +265,6 @@ export default async function DashboardPage() {
 
       </main>
     </div>
+    </AuthGuard>
   );
 }
