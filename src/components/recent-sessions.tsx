@@ -1,18 +1,7 @@
 import Link from "next/link";
+import type { Session } from "@/types/session";
 
-type Session = {
-  id: string;
-  event_name: string;
-  track_name: string;
-  session_date: string;
-  vehicle: string;
-  notes: string;
-  weather: string;
-  tire_pressure: string;
-  shock_setup: string;
-  lap_times: string[];
-  driver_name?: string;
-};
+
 
 type Props = {
   sessions: Session[];

@@ -4,20 +4,11 @@ import { LapChart } from "@/components/lap-chart";
 import { supabase } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import type { Session } from "@/types/session";
 
 /* ---------------- TYPES ---------------- */
 
-type Session = {
-  id: string;
-  lap_times: string[] | null;
-  track_name: string;
-  vehicle: string;
-  driver_name?: string;
-  tire_pressure?: string;
-  shock_setup?: string;
-  weather?: string;
-  session_date?: string;
-};
+
 
 /* ---------------- HELPERS ---------------- */
 
