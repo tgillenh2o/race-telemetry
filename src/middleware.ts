@@ -25,16 +25,17 @@ export async function middleware(req: NextRequest) {
 
   const path = req.nextUrl.pathname;
 
-  const isLogin = path === "/login";
-  const isRegister = path === "/register";
+  const isPublic =
+    path === "/login" ||
+    path === "/register";
 
-  // ❌ no session → force login
-  if (!session && !isLogin && !isRegister) {
+  // 🚨 not logged in → block
+  if (!session && !isPublic) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // ❌ logged in → block login page
-  if (session && isLogin) {
+  // 🚨 logged in → block login page
+  if (session && path === "/login") {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
