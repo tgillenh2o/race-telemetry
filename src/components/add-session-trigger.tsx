@@ -1,48 +1,65 @@
-"use client";
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-import { useState } from "react";
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-export function AddSessionTrigger() {
-  const [loading, setLoading] = useState(false);
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    const authHeader =
+      req.headers.get("authorization");
 
-    setLoading(true);
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-    const form = new FormData(e.currentTarget);
+    const token = authHeader.replace(
+      "Bearer ",
+      ""
+    );
 
-    const payload = {
-      event_name: form.get("event_name"),
-      track_name: form.get("track_name"),
-      vehicle: form.get("vehicle"),
-      tire_pressure: form.get("tire_pressure"),
-      shock_setup: form.get("shock_setup"),
-      weather: form.get("weather"),
-      lap_times: form.get("lap_times"),
-    };
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
 
-    await fetch("/api/sessions/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Invalid user" },
+        { status: 401 }
+      );
+    }
+
+    const { error } = await supabase
+      .from("sessions")
+      .insert([
+        {
+          ...body,
+          user_id: user.id,
+        },
+      ]);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
     });
-
-    setLoading(false);
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
   }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <input name="event_name" placeholder="Event" className="text-black" />
-      <input name="track_name" placeholder="Track" className="text-black" />
-      <button
-        disabled={loading}
-        className="px-4 py-2 bg-red-500 text-white rounded"
-      >
-        {loading ? "Saving..." : "Add Session"}
-      </button>
-    </form>
-  );
 }
