@@ -1,27 +1,29 @@
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
 
-  const hasSupabaseCookie =
+  const isLoginPage =
+    req.nextUrl.pathname === "/login";
+
+  // Look for ANY Supabase auth cookie
+  const hasSession =
     req.cookies
       .getAll()
       .some((cookie) =>
-        cookie.name.startsWith("sb-")
+        cookie.name.includes("auth-token")
       );
 
-  const isLoginPage =
-    req.nextUrl.pathname.startsWith("/login");
-
   // NOT LOGGED IN
-  if (!hasSupabaseCookie && !isLoginPage) {
+  if (!hasSession && !isLoginPage) {
     return NextResponse.redirect(
       new URL("/login", req.url)
     );
   }
 
-  // LOGGED IN
-  if (hasSupabaseCookie && isLoginPage) {
+  // ALREADY LOGGED IN
+  if (hasSession && isLoginPage) {
     return NextResponse.redirect(
       new URL("/", req.url)
     );
@@ -31,10 +33,6 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/",
-    "/session/:path*",
-    "/login",
-  ],
+  matcher: ["/", "/session/:path*", "/login"],
 };
 
