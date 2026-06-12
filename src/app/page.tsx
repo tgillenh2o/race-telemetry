@@ -62,10 +62,7 @@ export default async function DashboardPage() {
 }
 
 
-  // 🔐 AUTH CHECK FIRST
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
 
   
 
