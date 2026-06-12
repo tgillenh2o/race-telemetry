@@ -25,19 +25,25 @@ export function AddSessionTrigger() {
       return;
     }
 
-    const payload = {
-      user_id: user.id,
-      event_name: form.get("event_name") || "",
-      track_name: form.get("track_name") || "",
-      vehicle: form.get("vehicle") || "",
-      tire_pressure: form.get("tire_pressure") || "",
-      shock_setup: form.get("shock_setup") || "",
-      weather: form.get("weather") || "",
-      lap_times: String(form.get("lap_times") || "")
-        .split(",")
-        .map((l) => l.trim())
-        .filter(Boolean),
-    };
+const payload = {
+  user_id: user.id,
+
+  driver_name: form.get("driver_name") || "",
+
+  event_name: form.get("event_name") || "",
+  track_name: form.get("track_name") || "",
+  vehicle: form.get("vehicle") || "",
+  tire_pressure: form.get("tire_pressure") || "",
+  shock_setup: form.get("shock_setup") || "",
+  weather: form.get("weather") || "",
+
+  driver_notes: form.get("driver_notes") || "",
+
+  lap_times: String(form.get("lap_times") || "")
+    .split(",")
+    .map((l) => l.trim())
+    .filter(Boolean),
+};
 
     const { error } = await supabase
       .from("sessions")
@@ -87,6 +93,11 @@ export function AddSessionTrigger() {
               className="grid gap-3"
             >
               <input
+  name="driver_name"
+  placeholder="Driver Name"
+  className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white"
+/>
+              <input
                 name="event_name"
                 placeholder="Event"
                 className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white"
@@ -127,6 +138,12 @@ export function AddSessionTrigger() {
                 placeholder="Lap Times (comma separated)"
                 className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white min-h-[120px]"
               />
+              
+              <textarea
+  name="driver_notes"
+  placeholder="Driver Notes (setup, issues, conditions...)"
+  className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white min-h-[100px]"
+/>
 
               <button
                 type="submit"
