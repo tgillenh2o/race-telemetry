@@ -1,28 +1,31 @@
-
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { LapChart } from "@/components/lap-chart";
-import { SessionCompare } from "@/components/session-compare";
-import { EditSessionTrigger } from "@/components/edit-session-trigger";
-import { DeleteSessionButton } from "@/components/delete-session-button";
-
-export const dynamic = "force-dynamic";
 
 type Session = {
   id: string;
   user_id: string;
+
   lap_times: string[];
+
   track_name: string;
   vehicle: string;
+
   tire_pressure: string;
   shock_setup: string;
+
   weather: string;
   driver_name: string;
+
+  driver_notes?: string;
+
   session_date: string;
   event_name: string;
 };
+
+/* ---------------- HELPERS ---------------- */
 
 function parseLap(lap: string): number | null {
   if (!lap) return null;
@@ -30,7 +33,7 @@ function parseLap(lap: string): number | null {
   if (lap.includes(":")) {
     const [m, s] = lap.split(":").map(Number);
 
-    if (Number.isNaN(m) || Number.isNaN(s)) {
+    if (!Number.isFinite(m) || !Number.isFinite(s)) {
       return null;
     }
 
@@ -53,6 +56,8 @@ function formatLap(sec: number | null) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+/* ---------------- PAGE ---------------- */
+
 export default async function SessionPage({
   params,
 }: {
@@ -60,34 +65,32 @@ export default async function SessionPage({
 }) {
   const { id } = await params;
 
-  // AUTH
+  const supabase = createSupabaseServer();
 
-// AUTH
-const supabase = createSupabaseServer();
+  /* ---------------- AUTH ---------------- */
 
-const {
-  data: { user },
-} = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-// 🚨 BLOCK if no user
-if (!user) {
-  redirect("/login");
-}
+  if (!user) {
+    redirect("/login");
+  }
 
-// SESSION
-const { data: session, error } = await supabase
-  .from("sessions")
-  .select("*")
-  .eq("id", id)
-  .eq("user_id", user.id) // now safe (never undefined)
-  .single();
+  /* ---------------- SESSION ---------------- */
+
+  const { data: session, error } =
+    await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
 
   if (error || !session) {
     return (
       <div className="p-10 text-white">
-        <h1 className="text-xl font-bold">
-          Session not found
-        </h1>
+        Session not found
       </div>
     );
   }
@@ -95,18 +98,35 @@ const { data: session, error } = await supabase
   const typedSession: Session = {
     id: session.id,
     user_id: session.user_id,
+
     lap_times: session.lap_times ?? [],
+
     track_name: session.track_name ?? "",
     vehicle: session.vehicle ?? "",
-    tire_pressure: session.tire_pressure ?? "",
-    shock_setup: session.shock_setup ?? "",
+
+    tire_pressure:
+      session.tire_pressure ?? "",
+
+    shock_setup:
+      session.shock_setup ?? "",
+
     weather: session.weather ?? "",
-    driver_name: session.driver_name ?? "",
-    session_date: session.session_date ?? "",
-    event_name: session.event_name ?? "",
+
+    driver_name:
+      session.driver_name ?? "",
+
+    driver_notes:
+      session.driver_notes ?? "",
+
+    session_date:
+      session.session_date ?? "",
+
+    event_name:
+      session.event_name ?? "",
   };
 
-  // LAPS
+  /* ---------------- LAPS ---------------- */
+
   const laps: number[] = (
     typedSession.lap_times ?? []
   )
@@ -134,153 +154,398 @@ const { data: session, error } = await supabase
     })
   );
 
+  /* ---------------- INTELLIGENCE ---------------- */
+
+  const consistency =
+    laps.length > 1
+      ? Math.max(...laps) -
+        Math.min(...laps)
+      : null;
+
+  const consistencyText =
+    consistency !== null &&
+    consistency < 2
+      ? "Extremely Consistent"
+      : consistency !== null &&
+        consistency < 4
+      ? "Consistent"
+      : "Needs More Consistency";
+
+  /* ---------------- UI ---------------- */
+
   return (
-    <div className="min-h-screen bg-black p-6 text-white">
+    <div
+      className="
+        min-h-screen
+        bg-black
+        text-white
+        bg-[radial-gradient(circle_at_top,rgba(255,0,0,0.12),transparent_35%)]
+      "
+    >
 
       {/* HEADER */}
-      <div className="flex items-center gap-4">
 
-        <Link
-          href="/"
-          className="text-sm text-zinc-400 hover:text-red-400"
+      <div
+        className="
+          flex
+          items-center
+          justify-between
+          border-b
+          border-white/5
+          px-6
+          py-5
+        "
+      >
+
+        <div>
+          <Link
+            href="/"
+            className="
+              text-sm
+              text-zinc-500
+              hover:text-red-400
+              transition
+            "
+          >
+            ← Back to Dashboard
+          </Link>
+
+          <h1
+            className="
+              mt-3
+              text-3xl
+              font-black
+              tracking-wide
+            "
+          >
+            {typedSession.event_name}
+          </h1>
+
+          <p className="mt-1 text-zinc-500">
+            {typedSession.track_name}
+          </p>
+        </div>
+
+        <div
+          className="
+            rounded-full
+            border
+            border-red-500/20
+            bg-red-500/5
+            px-4
+            py-2
+            text-xs
+            tracking-widest
+            text-red-300
+            shadow-[0_0_15px_rgba(255,0,0,0.12)]
+          "
         >
-          ← Back
-        </Link>
-
-        <EditSessionTrigger
-          session={typedSession}
-        />
-
-        <DeleteSessionButton
-          sessionId={typedSession.id}
-        />
-
-      </div>
-
-      {/* SESSION INFO */}
-      <div className="mt-6 space-y-2">
-
-        <h1 className="text-3xl font-bold">
-          {typedSession.event_name}
-        </h1>
-
-        <p className="text-zinc-400">
-          {typedSession.track_name}
-        </p>
-
-        <div className="grid gap-2 text-sm text-zinc-300 md:grid-cols-2">
-
-          <p>
-            Vehicle: {typedSession.vehicle}
-          </p>
-
-          <p>
-            Driver: {typedSession.driver_name}
-          </p>
-
-          <p>
-            Weather: {typedSession.weather}
-          </p>
-
-          <p>
-            Tire Pressure:{" "}
-            {typedSession.tire_pressure}
-          </p>
-
-          <p>
-            Shock Setup:{" "}
-            {typedSession.shock_setup}
-          </p>
-
-        </div>
-      </div>
-
-      {/* METRICS */}
-      <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3">
-
-        <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-4">
-
-          <p className="text-xs uppercase tracking-widest text-zinc-500">
-            Best Lap
-          </p>
-
-          <p className="mt-2 font-mono text-2xl text-red-400">
-            {formatLap(bestLap)}
-          </p>
-
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-4">
-
-          <p className="text-xs uppercase tracking-widest text-zinc-500">
-            Average
-          </p>
-
-          <p className="mt-2 font-mono text-2xl">
-            {formatLap(avgLap)}
-          </p>
-
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-zinc-900/40 p-4">
-
-          <p className="text-xs uppercase tracking-widest text-zinc-500">
-            Total Laps
-          </p>
-
-          <p className="mt-2 font-mono text-2xl">
-            {laps.length}
-          </p>
-
+          SESSION ANALYSIS
         </div>
 
       </div>
 
-      {/* LAP LIST */}
-      <div className="mt-8">
+      {/* MAIN */}
 
-        <h2 className="text-xs uppercase tracking-widest text-zinc-500">
-          Lap Times
-        </h2>
+      <main className="space-y-8 p-6">
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        {/* KPI */}
 
-          {laps.map((lap, i) => (
-            <span
-              key={i}
-              className="rounded-md border border-red-500/20 bg-red-500/10 px-3 py-1 font-mono text-sm text-red-300"
+        <div className="grid gap-4 md:grid-cols-3">
+
+          {/* BEST */}
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-red-500/10
+              bg-zinc-950/40
+              p-5
+              backdrop-blur-md
+              shadow-[0_0_25px_rgba(255,0,0,0.08)]
+            "
+          >
+            <p className="text-sm text-zinc-500">
+              Best Lap
+            </p>
+
+            <p
+              className="
+                mt-2
+                text-3xl
+                font-bold
+                font-mono
+                text-red-400
+                drop-shadow-[0_0_15px_rgba(255,0,0,0.7)]
+              "
             >
-              {formatLap(lap)}
-            </span>
-          ))}
+              {formatLap(bestLap)}
+            </p>
+          </div>
+
+          {/* AVG */}
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-white/5
+              bg-zinc-950/40
+              p-5
+            "
+          >
+            <p className="text-sm text-zinc-500">
+              Average Lap
+            </p>
+
+            <p className="mt-2 text-3xl font-mono">
+              {formatLap(avgLap)}
+            </p>
+          </div>
+
+          {/* CONSISTENCY */}
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-white/5
+              bg-zinc-950/40
+              p-5
+            "
+          >
+            <p className="text-sm text-zinc-500">
+              Consistency
+            </p>
+
+            <p className="mt-2 text-lg font-semibold">
+              {consistencyText}
+            </p>
+          </div>
 
         </div>
-      </div>
 
-      {/* CHART */}
-      <div className="mt-10 rounded-2xl border border-white/10 bg-zinc-900/40 p-6">
+        {/* SESSION INFO */}
 
-        <h2 className="text-xs uppercase tracking-widest text-zinc-500">
-          Lap Progression
-        </h2>
+        <div
+          className="
+            grid
+            gap-4
+            md:grid-cols-2
+          "
+        >
 
-        <div className="mt-6">
-          <LapChart data={chartData} />
+          <div
+            className="
+              rounded-2xl
+              border
+              border-white/5
+              bg-zinc-950/40
+              p-6
+            "
+          >
+            <h2
+              className="
+                text-xs
+                uppercase
+                tracking-widest
+                text-zinc-500
+              "
+            >
+              Driver + Vehicle
+            </h2>
+
+            <div className="mt-4 space-y-3">
+
+              <div>
+                <p className="text-zinc-500 text-sm">
+                  Driver
+                </p>
+
+                <p className="font-semibold">
+                  {typedSession.driver_name ||
+                    "Unknown"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-zinc-500 text-sm">
+                  Vehicle
+                </p>
+
+                <p className="font-semibold">
+                  {typedSession.vehicle}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-zinc-500 text-sm">
+                  Weather
+                </p>
+
+                <p className="font-semibold">
+                  {typedSession.weather}
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          {/* SETUP */}
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-white/5
+              bg-zinc-950/40
+              p-6
+            "
+          >
+            <h2
+              className="
+                text-xs
+                uppercase
+                tracking-widest
+                text-zinc-500
+              "
+            >
+              Vehicle Setup
+            </h2>
+
+            <div className="mt-4 space-y-3">
+
+              <div>
+                <p className="text-zinc-500 text-sm">
+                  Tire Pressure
+                </p>
+
+                <p className="font-semibold">
+                  {typedSession.tire_pressure ||
+                    "—"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-zinc-500 text-sm">
+                  Shock Setup
+                </p>
+
+                <p className="font-semibold">
+                  {typedSession.shock_setup ||
+                    "—"}
+                </p>
+              </div>
+
+            </div>
+          </div>
+
         </div>
 
-      </div>
+        {/* NOTES */}
 
-      {/* COMPARE */}
-      <div className="mt-10">
+        <div
+          className="
+            rounded-2xl
+            border
+            border-white/5
+            bg-zinc-950/40
+            p-6
+          "
+        >
+          <h2
+            className="
+              text-xs
+              uppercase
+              tracking-widest
+              text-zinc-500
+            "
+          >
+            Driver Notes
+          </h2>
 
-        <SessionCompare
-          sessionA={typedSession}
-          allSessions={[]}
-        />
+          <p className="mt-4 leading-7 text-zinc-300">
+            {typedSession.driver_notes ||
+              "No notes added for this session."}
+          </p>
+        </div>
 
-      </div>
+        {/* LAP TIMES */}
 
+        <div
+          className="
+            rounded-2xl
+            border
+            border-white/5
+            bg-zinc-950/40
+            p-6
+          "
+        >
+          <h2
+            className="
+              text-xs
+              uppercase
+              tracking-widest
+              text-zinc-500
+            "
+          >
+            Lap Times
+          </h2>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+
+            {laps.map((lap, i) => (
+              <div
+                key={i}
+                className="
+                  rounded-full
+                  border
+                  border-red-500/20
+                  bg-red-500/5
+                  px-4
+                  py-2
+                  font-mono
+                  text-red-300
+                  shadow-[0_0_15px_rgba(255,0,0,0.12)]
+                "
+              >
+                {formatLap(lap)}
+              </div>
+            ))}
+
+          </div>
+        </div>
+
+        {/* CHART */}
+
+        <div
+          className="
+            rounded-2xl
+            border
+            border-white/5
+            bg-zinc-950/40
+            p-6
+            shadow-[0_0_35px_rgba(255,0,0,0.08)]
+          "
+        >
+          <h2
+            className="
+              text-xs
+              uppercase
+              tracking-widest
+              text-zinc-500
+            "
+          >
+            Lap Progression
+          </h2>
+
+          <div className="mt-6">
+            <LapChart data={chartData} />
+          </div>
+        </div>
+
+      </main>
     </div>
   );
 }
-
