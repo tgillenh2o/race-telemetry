@@ -203,10 +203,15 @@ export function SessionCompare({ sessionA, allSessions }: Props) {
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: "12px",
                     }}
-                    formatter={(value: any, name: string) => [
-                      formatLap(value),
-                      name,
-                    ]}
+                   formatter={(value, name) => {
+  const safeValue = typeof value === "number" ? value : Number(value);
+
+  const safeName = typeof name === "string" ? name : "";
+
+  if (Number.isNaN(safeValue)) return ["", ""];
+
+  return [formatLap(safeValue), safeName];
+}}
                     labelFormatter={(label) => `Lap ${label}`}
                   />
 
