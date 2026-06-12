@@ -7,7 +7,7 @@ import Link from "next/link";
 import type { Session } from "@/types/session";
 import { LogoutButton } from "@/components/logout-button";
 
-export const dynamic = "force-dynamic";
+
 
 /* ---------------- TYPES ---------------- */
 
@@ -42,25 +42,7 @@ function format(sec: number | null) {
 
 export default async function DashboardPage() {
   
-  const {
-  data: { user },
-} = await supabase.auth.getUser();
-
-
-   if (!user) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-black text-white">
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.location.href = '/login'
-          `,
-        }}
-      />
-    </div>
-  );
-}
-
+  
 
 
 
