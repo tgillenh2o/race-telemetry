@@ -43,6 +43,11 @@ function format(sec: number | null) {
 /* ---------------- PAGE ---------------- */
 
 export default async function DashboardPage() {
+  
+  const {
+  data: { user },
+} = await supabase.auth.getUser();
+
 
    if (!user) {
   return (
