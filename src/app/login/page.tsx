@@ -46,7 +46,8 @@ if (error) {
   return;
 }
 
-window.location.href = "/";
+window.location.reload();
+
 
 
 
