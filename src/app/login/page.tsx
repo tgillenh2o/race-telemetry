@@ -24,21 +24,26 @@ async function handleLogin(e: React.FormEvent) {
   setLoading(true);
   setError("");
 
-  const { error } = await supabase.auth.signInWithPassword({
-  email,
-  password,
-});
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-if (error) {
-  setError(error.message);
+  if (error) {
+    setError(error.message);
+    setLoading(false);
+    return;
+  }
+
+  // 🔥 wait for session to actually exist
+  const { data: sessionData } = await supabase.auth.getSession();
+
   setLoading(false);
-  return;
-}
 
-// wait for session write
-await new Promise((r) => setTimeout(r, 300));
-
-router.push("/");
+  if (sessionData?.session) {
+    // IMPORTANT: force full navigation (avoids Next router bugs)
+    window.location.href = "/";
+  }
 }
 
   return (
