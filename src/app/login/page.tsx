@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,6 +55,12 @@ export default function LoginPage() {
         >
           Login
         </button>
+<p className="mt-4 text-sm text-zinc-500">
+  Don’t have an account?{" "}
+  <Link href="/register" className="text-red-400 hover:underline">
+    Create one
+  </Link>
+</p>
 
       </div>
     </div>

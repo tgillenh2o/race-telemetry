@@ -54,6 +54,12 @@ export default function RegisterPage() {
         >
           Sign Up
         </button>
+<p className="mt-4 text-sm text-zinc-500">
+  Already have an account?{" "}
+  <Link href="/login" className="text-red-400 hover:underline">
+    Sign in
+  </Link>
+</p>
 
       </div>
     </div>
