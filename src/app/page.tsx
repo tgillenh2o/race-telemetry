@@ -1,10 +1,12 @@
 import { AddSessionTrigger } from "@/components/add-session-trigger";
 import { RecentSessions } from "@/components/recent-sessions";
 import { LapChart } from "@/components/lap-chart";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Session } from "@/types/session";
+
+export const dynamic = "force-dynamic";
 
 /* ---------------- HELPERS ---------------- */
 
@@ -32,7 +34,11 @@ function format(sec: number | null) {
 
 export default async function DashboardPage() {
   // ✅ SAFE USER FETCH (NO DUPLICATES)
-  const { data, error: userError } = await supabase.auth.getUser();
+ const supabase = createClient();
+
+const { data, error: userError } =
+  await supabase.auth.getUser();
+  
   const user = data?.user;
 
   if (userError) {
