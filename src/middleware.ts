@@ -10,7 +10,7 @@ export async function middleware(req: NextRequest) {
     {
       cookies: {
         getAll: () => req.cookies.getAll(),
-        setAll: (cookies) => {
+        setAll: (cookies: any[]) => {
           cookies.forEach(({ name, value, options }) => {
             res.cookies.set(name, value, options);
           });
@@ -26,14 +26,12 @@ export async function middleware(req: NextRequest) {
   const isLoginPage = req.nextUrl.pathname === "/login";
   const isRegisterPage = req.nextUrl.pathname === "/register";
 
-  // ❌ not logged in → force login
   if (!user && !isLoginPage && !isRegisterPage) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // ❌ logged in → block login page
   if (user && isLoginPage) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   return res;
