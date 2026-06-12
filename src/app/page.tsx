@@ -15,8 +15,19 @@ const {
 } = await supabase.auth.getUser();
 
 if (!user) {
-  redirect("/login");
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-black text-white">
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            window.location.href = '/login'
+          `,
+        }}
+      />
+    </div>
+  );
 }
+
 
 
 
@@ -50,7 +61,7 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  
 
   // 📦 DATA FETCH (user-scoped via RLS)
   const { data: sessions, error } = await supabase
