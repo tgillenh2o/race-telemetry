@@ -9,16 +9,17 @@ export function createSupabaseServer() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => cookieStore.getAll(),
+        getAll: async () => {
+          const store = await cookieStore;
+          return store.getAll();
+        },
 
-        setAll: (cookiesToSet) => {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          } catch (e) {
-            // ignore edge runtime limitations
-          }
+        setAll: async (cookiesToSet) => {
+          const store = await cookieStore;
+
+          cookiesToSet.forEach(({ name, value, options }) => {
+            store.set(name, value, options);
+          });
         },
       },
     }
