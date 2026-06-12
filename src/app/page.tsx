@@ -10,9 +10,7 @@ import { LogoutButton } from "@/components/logout-button";
 export const dynamic = "force-dynamic";
 
 /* ---------------- TYPES ---------------- */
-const {
-  data: { user },
-} = await supabase.auth.getUser();
+
 
 
 
