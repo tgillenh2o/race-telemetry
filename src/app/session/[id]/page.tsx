@@ -1,5 +1,5 @@
 
-import { createClient } from "@/lib/supabase-server";
+import { createSupabaseServer } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -63,7 +63,7 @@ export default async function SessionPage({
   // AUTH
 
 // AUTH
-const supabase = await createClient();
+const supabase = createSupabaseServer();
 
 const {
   data: { user },
