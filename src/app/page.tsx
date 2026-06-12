@@ -146,7 +146,7 @@ export default async function DashboardPage() {
         </h1>
 
         <div className="flex items-center gap-4">
-          <AddSessionTrigger />
+          
 
           <Link
             href="/login"
@@ -159,6 +159,7 @@ export default async function DashboardPage() {
 
       {/* MAIN */}
       <main className="mx-auto max-w-7xl px-6 py-10 space-y-10">
+        <AddSessionTrigger />
 
         {/* KPI */}
         <div className="grid gap-4 md:grid-cols-3">
