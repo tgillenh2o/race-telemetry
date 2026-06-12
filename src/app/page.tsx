@@ -50,11 +50,7 @@ export default async function DashboardPage() {
   }
 
   const safeSessions: Session[] = sessions ?? [];
-  const {
-  data: { user },
-} = await supabase.auth.getUser();
 
-  .eq("user_id", user?.id)
 
   /* ---------------- LAPS ---------------- */
 
