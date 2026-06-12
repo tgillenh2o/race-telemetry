@@ -48,11 +48,15 @@ export default async function DashboardPage() {
 
   
 
-  // 📦 DATA FETCH (user-scoped via RLS)
-  const { data: sessions, error } = await supabase
-    .from("sessions")
-    .select("*")
-    .order("created_at", { ascending: false });
+ const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+const { data: sessions, error } = await supabase
+  .from("sessions")
+  .select("*")
+  .eq("user_id", user?.id)
+  .order("created_at", { ascending: false });
 
   if (error) {
     console.error("Supabase error:", error);
