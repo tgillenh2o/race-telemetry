@@ -489,6 +489,93 @@ const improvedSession =
 
 </div>
 
+
+        /* ---------------- SETUP INTELLIGENCE ---------------- */
+
+const tirePressureValue = parseFloat(
+  typedSession.tire_pressure || "0"
+);
+
+let setupInsight =
+  "Not enough setup data yet.";
+
+const sessionsWithPressure = (
+  allSessions ?? []
+).filter((s) => {
+  return (
+    s.tire_pressure &&
+    !isNaN(
+      parseFloat(s.tire_pressure)
+    )
+  );
+});
+
+if (
+  sessionsWithPressure.length >= 3 &&
+  bestLap !== null
+) {
+  const fasterSessions =
+    sessionsWithPressure.filter(
+      (s) => {
+        const laps = (
+          s.lap_times ?? []
+        )
+          .map(parseLap)
+          .filter(
+            (
+              v: number | null
+            ): v is number =>
+              typeof v === "number"
+          );
+
+        if (!laps.length) {
+          return false;
+        }
+
+        const best =
+          Math.min(...laps);
+
+        return (
+          best <= bestLap + 1
+        );
+      }
+    );
+
+  const avgPressure =
+    fasterSessions.reduce(
+      (acc, s) => {
+        return (
+          acc +
+          parseFloat(
+            s.tire_pressure || "0"
+          )
+        );
+      },
+      0
+    ) /
+    Math.max(
+      fasterSessions.length,
+      1
+    );
+
+  if (
+    tirePressureValue >
+    avgPressure + 1
+  ) {
+    setupInsight =
+      "Your fastest sessions tend to use lower tire pressures.";
+  } else if (
+    tirePressureValue <
+    avgPressure - 1
+  ) {
+    setupInsight =
+      "You may benefit from slightly higher tire pressure for stability.";
+  } else {
+    setupInsight =
+      "Your tire pressure is aligned with your fastest sessions.";
+  }
+}
+
         {/* SESSION INFO */}
 
         <div
@@ -687,6 +774,89 @@ const improvedSession =
   </div>
 </div>
 
+
+            /* ---------------- SETUP INTELLIGENCE UI ---------------- */
+
+<div
+  className="
+    rounded-2xl
+    border
+    border-red-500/10
+    bg-zinc-950/40
+    p-6
+    shadow-[0_0_35px_rgba(255,0,0,0.08)]
+  "
+>
+  <div className="flex items-center justify-between">
+
+    <h2
+      className="
+        text-xs
+        uppercase
+        tracking-widest
+        text-zinc-500
+      "
+    >
+      Setup Intelligence
+    </h2>
+
+    <div
+      className="
+        rounded-full
+        border
+        border-red-500/20
+        bg-red-500/10
+        px-3
+        py-1
+        text-[10px]
+        tracking-widest
+        text-red-300
+      "
+    >
+      TELEMETRY AI
+    </div>
+
+  </div>
+
+  <div className="mt-5 space-y-4">
+
+    <div>
+      <p className="text-zinc-500 text-sm">
+        Setup Recommendation
+      </p>
+
+      <p
+        className="
+          mt-2
+          text-lg
+          font-semibold
+          leading-7
+          text-white
+        "
+      >
+        {setupInsight}
+      </p>
+    </div>
+
+    <div
+      className="
+        rounded-xl
+        border
+        border-white/5
+        bg-black/30
+        p-4
+      "
+    >
+      <p className="text-sm text-zinc-400">
+        Stage / Line analyzes tire
+        pressure, lap consistency,
+        and historical performance
+        to identify setup trends.
+      </p>
+    </div>
+
+  </div>
+</div>
         {/* NOTES */}
 
         <div
