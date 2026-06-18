@@ -37,7 +37,11 @@ export function AddSessionTrigger() {
       shock_setup: form.get("shock_setup") || "",
       weather: form.get("weather") || "",
 
-      lap_times: [],
+      lap_times:
+  String(form.get("lap_times") ?? "")
+    .split(",")
+    .map((lap) => lap.trim())
+    .filter(Boolean),
     };
 
     const { error } = await supabase
@@ -90,6 +94,8 @@ export function AddSessionTrigger() {
               <input name="vehicle" placeholder="Vehicle" className="w-full p-2 rounded bg-black text-white" />
 
               <input name="driver_name" placeholder="Driver Name" className="w-full p-2 rounded bg-black text-white" />
+              <input name="lap_times" type="text" placeholder="58.32, 58.10, 57.94, 58.27" className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none"
+  />
 
               <input name="tire_pressure" placeholder="Tire Pressure" className="w-full p-2 rounded bg-black text-white" />
               <input name="shock_setup" placeholder="Shock Setup" className="w-full p-2 rounded bg-black text-white" />
