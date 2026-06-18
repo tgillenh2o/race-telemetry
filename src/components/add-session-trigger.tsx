@@ -94,8 +94,7 @@ export function AddSessionTrigger() {
               <input name="vehicle" placeholder="Vehicle" className="w-full p-2 rounded bg-black text-white" />
 
               <input name="driver_name" placeholder="Driver Name" className="w-full p-2 rounded bg-black text-white" />
-              <input name="lap_times" type="text" placeholder="58.32, 58.10, 57.94, 58.27" className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none"
-  />
+              <input name="lap_times" type="text" placeholder=" Laptimes 58.32, 58.10, 57.94, 58.27" className="w-full p-2 rounded bg-black text-white"/>
 
               <input name="tire_pressure" placeholder="Tire Pressure" className="w-full p-2 rounded bg-black text-white" />
               <input name="shock_setup" placeholder="Shock Setup" className="w-full p-2 rounded bg-black text-white" />
