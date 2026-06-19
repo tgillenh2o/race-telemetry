@@ -121,7 +121,33 @@ export default async function SessionPage({
       time: lap,
     })
   );
+/* ---------------- RACE ENGINEER ---------------- */
 
+const fastestLap = bestLap ?? 0;
+const slowestLap = laps.length ? Math.max(...laps) : 0;
+
+const spread = slowestLap - fastestLap;
+
+let consistency = "Needs Work";
+
+if (spread < 0.3) {
+  consistency = "Elite";
+} else if (spread < 0.6) {
+  consistency = "Excellent";
+} else if (spread < 1) {
+  consistency = "Good";
+} else if (spread < 2) {
+  consistency = "Fair";
+}
+
+const recommendation =
+  consistency === "Elite"
+    ? "Excellent consistency. Keep this setup."
+    : consistency === "Excellent"
+    ? "Very consistent session. Minor tuning only."
+    : consistency === "Good"
+    ? "Car looks good. Focus on repeatability."
+    : "Large lap spread detected. Work on consistency before changing setup.";
   /* ---------------- PREVIOUS SESSION ---------------- */
 
   const {
@@ -584,39 +610,96 @@ export default async function SessionPage({
 
         </div>
 
-        {/* SESSION INTELLIGENCE */}
+     {/* RACE ENGINEER */}
 
-        <div
-          className="
-            rounded-2xl
-            border
-            border-red-500/10
-            bg-zinc-950/40
-            p-6
-          "
-        >
-          <h2
-            className="
-              text-xs
-              uppercase
-              tracking-widest
-              text-zinc-500
-            "
-          >
-            Session Intelligence
-          </h2>
+<div
+  className="
+    rounded-2xl
+    border
+    border-red-500/20
+    bg-gradient-to-br
+    from-zinc-950/80
+    to-black
+    p-6
+  "
+>
 
-          <p
-            className="
-              mt-4
-              text-xl
-              font-semibold
-              leading-8
-            "
-          >
-            {intelligenceMessage}
-          </p>
-        </div>
+  <div className="flex items-center justify-between">
+
+    <h2
+      className="
+        text-xs
+        uppercase
+        tracking-[0.3em]
+        text-red-400
+      "
+    >
+      🏁 Race Engineer
+    </h2>
+
+    <span className="text-xs text-zinc-500">
+      AI Analysis
+    </span>
+
+  </div>
+
+  <div className="mt-6 grid gap-4 md:grid-cols-2">
+
+    <div className="rounded-xl border border-white/5 bg-black/30 p-5">
+      <p className="text-xs uppercase text-zinc-500">
+        Consistency
+      </p>
+
+      <p className="mt-2 text-3xl font-bold">
+        {consistency}
+      </p>
+
+      <p className="mt-2 text-sm text-zinc-500">
+        Spread {spread.toFixed(2)} sec
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-white/5 bg-black/30 p-5">
+      <p className="text-xs uppercase text-zinc-500">
+        Fastest Lap
+      </p>
+
+      <p className="mt-2 text-3xl font-mono text-red-400">
+        {formatLap(bestLap)}
+      </p>
+
+      <p className="mt-2 text-sm text-zinc-500">
+        Average {formatLap(avgLap)}
+      </p>
+    </div>
+
+  </div>
+
+  <div className="mt-5 rounded-xl border border-white/5 bg-black/30 p-5">
+
+    <p className="text-xs uppercase text-zinc-500">
+      Recommendation
+    </p>
+
+    <p className="mt-3 text-lg leading-8">
+      {recommendation}
+    </p>
+
+  </div>
+
+  <div className="mt-5 rounded-xl border border-red-500/10 bg-red-500/5 p-5">
+
+    <p className="text-xs uppercase tracking-widest text-red-400">
+      Insight
+    </p>
+
+    <p className="mt-3 text-lg">
+      {intelligenceMessage}
+    </p>
+
+  </div>
+
+</div>
 
         {/* SETUP INTELLIGENCE */}
 
