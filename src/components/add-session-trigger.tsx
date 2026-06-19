@@ -63,14 +63,13 @@ if (editing) {
     lap_times: payload.lap_times.map((l) => l.trim()),
   };
 
-  const { data, error } = await supabase
-    .from("sessions")
-    .update(updatePayload)
-    .eq("id", session!.id)
-    .select();
+  const res = await supabase
+  .from("sessions")
+  .insert([payload])
+  .select();
 
-  console.log("UPDATED:", data);
-  console.log("ERROR:", error);
+const data = res.data;
+const error = res.error;
 }
 
 if (error) {
