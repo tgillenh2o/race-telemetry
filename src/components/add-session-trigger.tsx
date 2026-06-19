@@ -22,15 +22,15 @@ export function AddSessionTrigger({
   const [laps, setLaps] = useState<number[]>([]);
   const [newLap, setNewLap] = useState("");
 
-  useEffect(() => {
-    if (session?.lap_times) {
-     setLaps(
-  (session.lap_times ?? [])
-    .map((l) => Number(l))
-    .filter((n) => !isNaN(n))
-);
-    }
-  }, [session]);
+ useEffect(() => {
+  if (!session?.lap_times) return;
+
+  setLaps(
+    session.lap_times
+      .map((l) => Number(l))
+      .filter((n) => !isNaN(n))
+  );
+}, [session?.id]); // 🔥 IMPORTANT: only run once per session
 
   // ---------------- SUBMIT ----------------
   async function handleSubmit(
