@@ -193,7 +193,7 @@ export function AddSessionTrigger({
 
                   {laps.map((lap, i) => (
                     <div
-                      key={index}
+                      key={I}
                       className="flex items-center gap-2 bg-zinc-800 px-3 py-1 rounded"
                     >
                       <span className="font-mono">
@@ -203,7 +203,7 @@ export function AddSessionTrigger({
                      <button
   type="button"
   onClick={async () => {
-    const updated = laps.filter((_, i) => i !== index);
+    const updated = laps.filter((_, i) => i !== i);
     setLaps(updated);
     await updateLaps(updated);
   }}
