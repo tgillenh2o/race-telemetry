@@ -94,26 +94,87 @@ export default async function SessionPage({
   }));
 
   const spread =
-    laps.length > 1
-      ? Math.max(...laps) - Math.min(...laps)
-      : 0;
+  laps.length > 1
+    ? Math.max(...laps) - Math.min(...laps)
+    : 0;
 
-  let consistency = "Needs Work";
+const spreadPct = avgLap ? (spread / avgLap) * 100 : 0;
 
-  if (spread < 0.3) consistency = "Elite";
-  else if (spread < 0.6) consistency = "Excellent";
-  else if (spread < 1) consistency = "Good";
-  else if (spread < 2) consistency = "Fair";
+let consistency = "Needs Work";
+if (spreadPct < 1) consistency = "Elite";
+else if (spreadPct < 2) consistency = "Excellent";
+else if (spreadPct < 4) consistency = "Good";
+else if (spreadPct < 7) consistency = "Fair";
 
-  const recommendation =
-    consistency === "Elite"
-      ? "Excellent consistency. Keep this setup."
-      : consistency === "Excellent"
-      ? "Very consistent session. Minor tuning only."
-      : consistency === "Good"
-      ? "Car looks good. Focus on repeatability."
-      : "Large lap spread detected. Work on consistency before setup changes.";
+function getTrend(laps: number[]) {
+  if (laps.length < 4) return null;
 
+  const half = Math.floor(laps.length / 2);
+  const firstHalf = laps.slice(0, half);
+  const secondHalf = laps.slice(-half);
+
+  const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+
+  const delta = avg(secondHalf) - avg(firstHalf);
+  const deltaPct = (delta / avg(firstHalf)) * 100;
+
+  if (deltaPct > 2) return "fading";
+  if (deltaPct < -2) return "improving";
+  return "stable";
+}
+
+const trend = getTrend(laps);
+
+function findOutliers(laps: number[], best: number) {
+  return laps
+    .map((lap, i) => ({ lap, i }))
+    .filter(({ lap }) => lap > best * 1.08);
+}
+
+const outliers = bestLap ? findOutliers(laps, bestLap) : [];
+
+function getRecommendation({
+  consistency,
+  trend,
+  outliers,
+  lapCount,
+}: {
+  consistency: string;
+  trend: string | null;
+  outliers: { lap: number; i: number }[];
+  lapCount: number;
+}) {
+  if (lapCount < 3) {
+    return "Not enough laps yet for a reliable read. Log a few more.";
+  }
+
+  if (outliers.length > 0) {
+    return `${outliers.length} lap${outliers.length > 1 ? "s" : ""} significantly off pace (lap ${outliers
+      .map((o) => o.i + 1)
+      .join(", ")}) — likely traffic or an off-track moment. Excluding ${outliers.length > 1 ? "those" : "that"}, focus on the remaining trend.`;
+  }
+
+  if (trend === "fading") {
+    return "Pace dropped off through the session — could be tire wear, fuel load, or driver fatigue. Worth checking long-run pace specifically.";
+  }
+
+  if (trend === "improving") {
+    return "Pace improved as the session went on — track evolution or driver ramp-up. Early laps may not reflect true potential.";
+  }
+
+  if (consistency === "Elite") return "Excellent consistency. Keep this setup.";
+  if (consistency === "Excellent") return "Very consistent session. Minor tuning only.";
+  if (consistency === "Good") return "Car looks good. Focus on repeatability.";
+
+  return "Large lap spread detected. Work on consistency before setup changes.";
+}
+
+const recommendation = getRecommendation({
+  consistency,
+  trend,
+  outliers,
+  lapCount: laps.length,
+});
   /* ---------------- RENDER ---------------- */
 
   return (
