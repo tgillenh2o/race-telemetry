@@ -181,12 +181,10 @@ export default async function SessionPage({
               </p>
             ) : (
               laps.map((lap, i) => (
-                <span
-                  key={i}
-                  className="px-2 py-1 bg-black rounded font-mono text-sm"
-                >
-                  {lap.toFixed(2)}
-                </span>
+              <span className="px-2 py-1 bg-black rounded font-mono text-sm">
+  {formatLap(lap)}
+</span>
+                
               ))
             )}
           </div>
