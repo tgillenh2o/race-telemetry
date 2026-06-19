@@ -53,17 +53,27 @@ export function AddSessionTrigger({
     .filter(Boolean),
     };
 
-    let error;
+ let data;
+let error;
 
 if (editing) {
-  ({ error } = await supabase
+  ({ data, error } = await supabase
     .from("sessions")
     .update(payload)
-    .eq("id", session!.id));
+    .eq("id", session!.id)
+    .select());
 } else {
-  ({ error } = await supabase
+  ({ data, error } = await supabase
     .from("sessions")
-    .insert([payload]));
+    .insert([payload])
+    .select());
+}
+
+console.log("Returned:", data);
+
+if (error) {
+  console.error(error);
+  alert(error.message);
 }
 
     if (error) {
