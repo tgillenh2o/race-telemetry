@@ -7,7 +7,20 @@ import { LapChart } from "@/components/lap-chart";
 
 import type { Session } from "@/types/session";
 
-/* ---------------- HELPERS ---------------- */
+/* ---------------- LAP NORMALIZER ---------------- */
+
+function normalizeLaps(input: unknown): number[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .map((lap) => {
+      const n = typeof lap === "number" ? lap : Number(lap);
+      return Number.isFinite(n) ? n : null;
+    })
+    .filter((v): v is number => v !== null);
+}
+
+/* ---------------- FORMAT ---------------- */
 
 function formatLap(sec: number | null) {
   if (sec === null || sec === undefined) return "—";
@@ -48,36 +61,35 @@ export default async function SessionPage({
 
   const session = data as Session;
 
-  /* ---------------- LAPS (SOURCE OF TRUTH) ---------------- */
+  /* ---------------- LAPS (SAFE CORE) ---------------- */
 
-  const laps: number[] = session.lap_times ?? [];
+  const laps = normalizeLaps(session.lap_times);
 
-  const bestLap =
-    laps.length > 0 ? Math.min(...laps) : null;
+  const bestLap = laps.length ? Math.min(...laps) : null;
 
-  const avgLap =
-    laps.length > 0
-      ? laps.reduce((a, b) => a + b, 0) / laps.length
-      : null;
+  const avgLap = laps.length
+    ? laps.reduce((a, b) => a + b, 0) / laps.length
+    : null;
+
+  const slowestLap = laps.length ? Math.max(...laps) : null;
+
+  const spread =
+    laps.length > 1 && slowestLap !== null && bestLap !== null
+      ? slowestLap - bestLap
+      : 0;
 
   const chartData = laps.map((lap, index) => ({
     lap: index + 1,
     time: lap,
   }));
 
-  const fastestLap = bestLap ?? 0;
-
-  const slowestLap =
-    laps.length > 0 ? Math.max(...laps) : 0;
-
   const fastestLapIndex =
     bestLap !== null ? laps.indexOf(bestLap) + 1 : null;
 
   const slowestLapIndex =
-    laps.length > 0 ? laps.indexOf(slowestLap) + 1 : null;
+    slowestLap !== null ? laps.indexOf(slowestLap) + 1 : null;
 
-  const spread =
-    laps.length > 0 ? slowestLap - fastestLap : 0;
+  /* ---------------- RACE ENGINEER ---------------- */
 
   let consistency = "Needs Work";
 
@@ -107,34 +119,23 @@ export default async function SessionPage({
 
   const previousSession = previousSessions?.[0];
 
-  /* ---------------- INTELLIGENCE ---------------- */
-
   let intelligenceMessage = "Not enough session data yet.";
 
   if (previousSession) {
-    const previousLaps: number[] =
-      previousSession.lap_times ?? [];
+    const previousLaps = normalizeLaps(previousSession.lap_times);
 
     const previousBest =
-      previousLaps.length > 0
-        ? Math.min(...previousLaps)
-        : null;
+      previousLaps.length ? Math.min(...previousLaps) : null;
 
     if (previousBest !== null && bestLap !== null) {
       const delta = previousBest - bestLap;
 
-      if (delta > 0) {
-        intelligenceMessage = `You went ${delta.toFixed(
-          2
-        )} seconds faster than your previous session.`;
-      } else if (delta < 0) {
-        intelligenceMessage = `You were ${Math.abs(
-          delta
-        ).toFixed(2)} seconds slower than your previous session.`;
-      } else {
-        intelligenceMessage =
-          "You matched your previous best lap exactly.";
-      }
+      intelligenceMessage =
+        delta > 0
+          ? `You went ${delta.toFixed(2)} seconds faster than your previous session.`
+          : delta < 0
+          ? `You were ${Math.abs(delta).toFixed(2)} seconds slower than your previous session.`
+          : "You matched your previous best lap exactly.";
     }
   }
 
@@ -145,14 +146,12 @@ export default async function SessionPage({
     .select("*")
     .eq("user_id", user.id);
 
-  const allBestLaps = (allSessions ?? []).flatMap(
-    (s) => s.lap_times ?? []
+  const allBestLaps = (allSessions ?? []).flatMap((s) =>
+    normalizeLaps(s.lap_times)
   );
 
   const overallBest =
-    allBestLaps.length > 0
-      ? Math.min(...allBestLaps)
-      : null;
+    allBestLaps.length ? Math.min(...allBestLaps) : null;
 
   const isPersonalRecord =
     bestLap !== null &&
@@ -205,13 +204,10 @@ export default async function SessionPage({
   let comparisonData: any = null;
 
   if (previousSession) {
-    const previousLaps: number[] =
-      previousSession.lap_times ?? [];
+    const previousLaps = normalizeLaps(previousSession.lap_times);
 
     const previousBest =
-      previousLaps.length > 0
-        ? Math.min(...previousLaps)
-        : null;
+      previousLaps.length ? Math.min(...previousLaps) : null;
 
     comparisonData = {
       bestLapDelta:
@@ -229,7 +225,6 @@ export default async function SessionPage({
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* HEADER */}
       <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
         <Link href="/" className="text-sm text-zinc-400">
           ← Back
@@ -238,7 +233,6 @@ export default async function SessionPage({
         <AddSessionTrigger session={session} />
       </div>
 
-      {/* MAIN */}
       <div className="mx-auto max-w-6xl p-6 space-y-8">
         <h1 className="text-4xl font-black text-red-500">
           SESSION
@@ -246,31 +240,17 @@ export default async function SessionPage({
 
         <p className="text-zinc-500">{session.track_name}</p>
 
-        {/* STATS */}
         <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <p>Best Lap</p>
-            <p>{formatLap(bestLap)}</p>
-          </div>
-
-          <div>
-            <p>Average Lap</p>
-            <p>{formatLap(avgLap)}</p>
-          </div>
-
-          <div>
-            <p>Total Laps</p>
-            <p>{laps.length}</p>
-          </div>
+          <div>Best: {formatLap(bestLap)}</div>
+          <div>Avg: {formatLap(avgLap)}</div>
+          <div>Total: {laps.length}</div>
         </div>
 
-        {/* NOTES */}
         <div>
           <h2>Driver Notes</h2>
           <p>{session.driver_notes || "No notes recorded."}</p>
         </div>
 
-        {/* CHART */}
         <LapChart data={chartData} />
       </div>
     </div>
