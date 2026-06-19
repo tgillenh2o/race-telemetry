@@ -10,7 +10,13 @@ import { LapChart } from "@/components/lap-chart";
 
 /* ---------------- HELPERS ---------------- */
 
-function parseLap(lap: string): number | null {
+function parseLap(
+  lap: string | number
+): number | null {
+  if (typeof lap === "number") {
+    return Number.isFinite(lap) ? lap : null;
+  }
+
   if (!lap) return null;
 
   if (lap.includes(":")) {
@@ -23,9 +29,9 @@ function parseLap(lap: string): number | null {
     return m * 60 + s;
   }
 
-  const v = Number(lap);
+  const value = Number(lap);
 
-  return Number.isFinite(v) ? v : null;
+  return Number.isFinite(value) ? value : null;
 }
 
 function format(sec: number | null) {
