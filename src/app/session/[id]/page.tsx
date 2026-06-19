@@ -59,6 +59,16 @@ export default async function SessionPage({
     redirect("/login");
   }
 
+  const { data: history } = await supabase
+  .from("sessions")
+  .select("*")
+  .eq("user_id", user.id)
+  .eq("track_name", session.track_name)
+  .neq("id", session.id)
+  .order("created_at", { ascending: false })
+  .limit(10);
+
+const pastSessions = (history ?? []) as Session[];
   /* ---------------- SESSION ---------------- */
 
   const { data, error } = await supabase
@@ -132,6 +142,23 @@ function findOutliers(laps: number[], best: number) {
 }
 
 const outliers = bestLap ? findOutliers(laps, bestLap) : [];
+  function getHistoryStats(pastSessions: Session[]) {
+  const allLaps = pastSessions.flatMap((s) =>
+    (s.lap_times ?? [])
+      .map(parseLap)
+      .filter((v): v is number => v !== null)
+  );
+
+  if (allLaps.length === 0) return null;
+
+  return {
+    historicalBest: Math.min(...allLaps),
+    historicalAvg: allLaps.reduce((a, b) => a + b, 0) / allLaps.length,
+    sessionCount: pastSessions.length,
+  };
+}
+
+const historyStats = getHistoryStats(pastSessions);
 
 function getRecommendation({
   consistency,
@@ -141,6 +168,8 @@ function getRecommendation({
   weather,
   tirePressure,
   shockSetup,
+  bestLap,
+  historyStats,
 }: {
   consistency: string;
   trend: string | null;
@@ -149,6 +178,8 @@ function getRecommendation({
   weather?: string;
   tirePressure?: string;
   shockSetup?: string;
+  bestLap: number | null;
+  historyStats: { historicalBest: number; historicalAvg: number; sessionCount: number } | null;
 }) {
   if (lapCount < 3) {
     return "Not enough laps yet for a reliable read. Log a few more.";
@@ -160,13 +191,24 @@ function getRecommendation({
       .join(", ")}) — likely traffic or an off-track moment. Excluding ${outliers.length > 1 ? "those" : "that"}, focus on the remaining trend.`;
   }
 
+  // NEW: cross-session comparison
+  if (historyStats && bestLap !== null) {
+    if (bestLap < historyStats.historicalBest) {
+      const improvement = historyStats.historicalBest - bestLap;
+      return `New best lap at this track — ${improvement.toFixed(2)}s faster than your previous best across ${historyStats.sessionCount} session${historyStats.sessionCount > 1 ? "s" : ""}. Whatever changed, it's working.`;
+    }
+
+    const offPace = bestLap - historyStats.historicalBest;
+    if (offPace > historyStats.historicalBest * 0.03) {
+      return `Best lap this session is ${offPace.toFixed(2)}s off your historical best at this track. Worth comparing today's setup against past sessions that ran faster.`;
+    }
+  }
+
   if (trend === "fading") {
     const hot = weather && /hot|warm|sunny/i.test(weather);
-
     if (tirePressure) {
       return `Pace dropped off through the session. With tires set at ${tirePressure}${hot ? " in hot conditions" : ""}, this looks like tire heat build-up or wear — consider starting a notch lower on pressure next time out.`;
     }
-
     return "Pace dropped off through the session — could be tire wear, fuel load, or driver fatigue. Worth checking long-run pace specifically.";
   }
 
@@ -177,17 +219,15 @@ function getRecommendation({
   if (consistency === "Elite") {
     return `Excellent consistency${shockSetup ? ` — current shock setup (${shockSetup}) is working well. Keep it.` : ". Keep this setup."}`;
   }
-
   if (consistency === "Excellent") return "Very consistent session. Minor tuning only.";
-
   if (consistency === "Good") return "Car looks good. Focus on repeatability.";
 
   if (shockSetup) {
     return `Large lap spread detected. With the current shock setup (${shockSetup}), start there — consider adjusting before changing anything else.`;
   }
-
   return "Large lap spread detected. Work on consistency before setup changes.";
 }
+
   
 const recommendation = getRecommendation({
   consistency,
@@ -197,6 +237,8 @@ const recommendation = getRecommendation({
   weather: session.weather,
   tirePressure: session.tire_pressure,
   shockSetup: session.shock_setup,
+  bestLap,
+  historyStats,
 });
   /* ---------------- RENDER ---------------- */
 
