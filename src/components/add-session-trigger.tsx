@@ -23,17 +23,35 @@ export function AddSessionTrigger({
 
   // ✅ ONLY ONE CLEAN LOAD
   useEffect(() => {
-    if (!session?.lap_times) {
-      setLaps([]);
-      return;
-    }
+  if (!session?.lap_times) {
+    setLaps([]);
+    return;
+  }
 
-    const parsed = session.lap_times
-      .map((l) => Number(l))
-      .filter((n) => Number.isFinite(n));
+  const raw = session.lap_times;
 
-    setLaps(parsed);
-  }, [session?.id, open]);
+  let parsed: number[] = [];
+
+  // Case 1: already array
+  if (Array.isArray(raw)) {
+    parsed = raw;
+  }
+
+  // Case 2: Postgres string array "{1,2,3}"
+  else if (typeof raw === "string") {
+    parsed = raw
+      .replace(/[{}]/g, "")
+      .split(",")
+      .map((v) => Number(v));
+  }
+
+  // Clean final values
+  const clean = parsed.filter(
+    (n) => typeof n === "number" && Number.isFinite(n)
+  );
+
+  setLaps(clean);
+}, [session?.id]);
 
   // ---------------- SUBMIT ----------------
   async function handleSubmit(
