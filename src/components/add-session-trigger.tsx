@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-
+import { useRouter } from "next/navigation";
 import type { Session } from "@/types/session";
 
 export function AddSessionTrigger({
@@ -11,7 +11,7 @@ export function AddSessionTrigger({
   session?: Session;
 }) {
 
-
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false); 
   const editing = !!session;
@@ -40,7 +40,7 @@ export function AddSessionTrigger({
       vehicle: form.get("vehicle") || "",
 
       driver_name: form.get("driver_name") || "",
-      notes: form.get("notes") || "",
+      driver_notes: form.get("driver_notes") || "",
 
       tire_pressure: form.get("tire_pressure") || "",
       shock_setup: form.get("shock_setup") || "",
@@ -57,19 +57,20 @@ export function AddSessionTrigger({
 let error;
 
 if (editing) {
-  ({ data, error } = await supabase
-    .from("sessions")
-    .update(payload)
-    .eq("id", session!.id)
-    .select());
-} else {
-  ({ data, error } = await supabase
-    .from("sessions")
-    .insert([payload])
-    .select());
-}
+  const updatePayload = {
+    ...payload,
+    lap_times: payload.lap_times.map((l) => l.trim()),
+  };
 
-console.log("Returned:", data);
+  const { data, error } = await supabase
+    .from("sessions")
+    .update(updatePayload)
+    .eq("id", session!.id)
+    .select();
+
+  console.log("UPDATED:", data);
+  console.log("ERROR:", error);
+}
 
 if (error) {
   console.error(error);
@@ -84,7 +85,7 @@ if (error) {
     setOpen(false);
 
     // refresh page data
-    window.location.reload();
+    router.refresh();
   }
 
   return (
@@ -129,8 +130,8 @@ if (error) {
               <input name="weather" defaultValue={session?.weather ?? ""} placeholder="Weather" className="w-full p-2 rounded bg-black text-white" />
 
               <textarea
-  name="notes"
-  defaultValue={session?.notes ?? ""}
+  name="driver_notes"
+  defaultValue={session?.driver_notes ?? ""}
   placeholder="Driver Notes"
   className="w-full p-2 rounded bg-black text-white min-h-[100px]"
 />
