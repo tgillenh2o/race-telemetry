@@ -48,12 +48,15 @@ export default async function SessionPage({
 
   const session = data as Session;
 
-  /* ---------------- LAPS (SOURCE OF TRUTH) ---------------- */
+  /* ---------------- LAPS (NO PARSING SYSTEM) ---------------- */
 
-  const laps: number[] = session.lap_times ?? [];
+  const laps: number[] = Array.isArray(session.lap_times)
+    ? session.lap_times.filter((n: unknown): n is number =>
+  typeof n === "number" && Number.isFinite(n)
+      )
+    : [];
 
-  const bestLap =
-    laps.length > 0 ? Math.min(...laps) : null;
+  const bestLap = laps.length ? Math.min(...laps) : null;
 
   const avgLap =
     laps.length > 0
@@ -65,19 +68,14 @@ export default async function SessionPage({
     time: lap,
   }));
 
-  const fastestLap = bestLap ?? 0;
+  /* ---------------- ENGINEERING ---------------- */
 
-  const slowestLap =
-    laps.length > 0 ? Math.max(...laps) : 0;
-
-  const fastestLapIndex =
-    bestLap !== null ? laps.indexOf(bestLap) + 1 : null;
-
-  const slowestLapIndex =
-    laps.length > 0 ? laps.indexOf(slowestLap) + 1 : null;
+  const slowestLap = laps.length ? Math.max(...laps) : null;
 
   const spread =
-    laps.length > 0 ? slowestLap - fastestLap : 0;
+    bestLap !== null && slowestLap !== null
+      ? slowestLap - bestLap
+      : 0;
 
   let consistency = "Needs Work";
 
@@ -112,13 +110,15 @@ export default async function SessionPage({
   let intelligenceMessage = "Not enough session data yet.";
 
   if (previousSession) {
-    const previousLaps: number[] =
-      previousSession.lap_times ?? [];
+    const previousLaps: number[] = Array.isArray(previousSession.lap_times)
+      ? previousSession.lap_times.filter(
+          (n: unknown): n is number =>
+  typeof n === "number" && Number.isFinite(n)
+        )
+      : [];
 
     const previousBest =
-      previousLaps.length > 0
-        ? Math.min(...previousLaps)
-        : null;
+      previousLaps.length > 0 ? Math.min(...previousLaps) : null;
 
     if (previousBest !== null && bestLap !== null) {
       const delta = previousBest - bestLap;
@@ -128,9 +128,9 @@ export default async function SessionPage({
           2
         )} seconds faster than your previous session.`;
       } else if (delta < 0) {
-        intelligenceMessage = `You were ${Math.abs(
-          delta
-        ).toFixed(2)} seconds slower than your previous session.`;
+        intelligenceMessage = `You were ${Math.abs(delta).toFixed(
+          2
+        )} seconds slower than your previous session.`;
       } else {
         intelligenceMessage =
           "You matched your previous best lap exactly.";
@@ -138,100 +138,13 @@ export default async function SessionPage({
     }
   }
 
-  /* ---------------- ALL SESSIONS ---------------- */
-
-  const { data: allSessions } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("user_id", user.id);
-
-  const allBestLaps = (allSessions ?? []).flatMap(
-    (s) => s.lap_times ?? []
-  );
-
-  const overallBest =
-    allBestLaps.length > 0
-      ? Math.min(...allBestLaps)
-      : null;
-
-  const isPersonalRecord =
-    bestLap !== null &&
-    overallBest !== null &&
-    bestLap <= overallBest;
-
-  const isConsistent =
-    laps.length > 1 &&
-    Math.max(...laps) - Math.min(...laps) < 2;
-
-  const improvedSession =
-    intelligenceMessage.includes("faster");
-
-  /* ---------------- SETUP INTELLIGENCE ---------------- */
-
-  const tirePressureValue = parseFloat(
-    session.tire_pressure || "0"
-  );
-
-  let setupInsight = "Not enough setup data yet.";
-
-  const sessionsWithPressure = (allSessions ?? []).filter(
-    (s) =>
-      s.tire_pressure &&
-      !isNaN(parseFloat(s.tire_pressure))
-  );
-
-  if (sessionsWithPressure.length >= 3 && bestLap !== null) {
-    const avgPressure =
-      sessionsWithPressure.reduce(
-        (acc, s) =>
-          acc + parseFloat(s.tire_pressure || "0"),
-        0
-      ) / sessionsWithPressure.length;
-
-    if (tirePressureValue > avgPressure + 1) {
-      setupInsight =
-        "Your fastest sessions tend to use lower tire pressures.";
-    } else if (tirePressureValue < avgPressure - 1) {
-      setupInsight =
-        "You may benefit from slightly higher tire pressure for stability.";
-    } else {
-      setupInsight =
-        "Your tire pressure is aligned with your fastest sessions.";
-    }
-  }
-
-  /* ---------------- COMPARISON ---------------- */
-
-  let comparisonData: any = null;
-
-  if (previousSession) {
-    const previousLaps: number[] =
-      previousSession.lap_times ?? [];
-
-    const previousBest =
-      previousLaps.length > 0
-        ? Math.min(...previousLaps)
-        : null;
-
-    comparisonData = {
-      bestLapDelta:
-        bestLap !== null && previousBest !== null
-          ? previousBest - bestLap
-          : null,
-      previousVehicle: previousSession.vehicle ?? "—",
-      previousPressure: previousSession.tire_pressure ?? "—",
-      previousShock: previousSession.shock_setup ?? "—",
-      previousBest,
-    };
-  }
-
-  /* ---------------- UI ---------------- */
+  /* ---------------- RENDER ---------------- */
 
   return (
     <div className="min-h-screen bg-black text-white">
       {/* HEADER */}
       <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
-        <Link href="/" className="text-sm text-zinc-400">
+        <Link href="/" className="text-sm text-zinc-400 hover:text-red-400">
           ← Back
         </Link>
 
@@ -240,38 +153,69 @@ export default async function SessionPage({
 
       {/* MAIN */}
       <div className="mx-auto max-w-6xl p-6 space-y-8">
-        <h1 className="text-4xl font-black text-red-500">
-          SESSION
-        </h1>
 
-        <p className="text-zinc-500">{session.track_name}</p>
+        {/* TITLE */}
+        <div>
+          <h1 className="text-4xl font-black tracking-[0.2em] text-red-500">
+            SESSION
+          </h1>
+          <p className="mt-2 text-zinc-500">{session.track_name}</p>
+        </div>
 
         {/* STATS */}
         <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <p>Best Lap</p>
-            <p>{formatLap(bestLap)}</p>
+          <div className="p-6 border border-red-500/10">
+            <p className="text-zinc-500 text-sm">Best Lap</p>
+            <p className="text-3xl font-mono text-red-400 mt-2">
+              {formatLap(bestLap)}
+            </p>
           </div>
 
-          <div>
-            <p>Average Lap</p>
-            <p>{formatLap(avgLap)}</p>
+          <div className="p-6 border border-white/5">
+            <p className="text-zinc-500 text-sm">Average Lap</p>
+            <p className="text-3xl font-mono mt-2">
+              {formatLap(avgLap)}
+            </p>
           </div>
 
-          <div>
-            <p>Total Laps</p>
-            <p>{laps.length}</p>
+          <div className="p-6 border border-white/5">
+            <p className="text-zinc-500 text-sm">Total Laps</p>
+            <p className="text-3xl font-mono mt-2">{laps.length}</p>
           </div>
         </div>
 
-        {/* NOTES */}
-        <div>
-          <h2>Driver Notes</h2>
-          <p>{session.driver_notes || "No notes recorded."}</p>
+        {/* ENGINEER */}
+        <div className="p-6 border border-red-500/20">
+          <h2 className="text-xs uppercase text-red-400">
+            Race Engineer
+          </h2>
+
+          <p className="mt-4 text-lg">{recommendation}</p>
+
+          <p className="mt-4 text-red-300">
+            {intelligenceMessage}
+          </p>
         </div>
 
         {/* CHART */}
-        <LapChart data={chartData} />
+        <div className="p-6 border border-white/5">
+          <h2 className="text-xs uppercase text-zinc-500">
+            Lap Progression
+          </h2>
+
+          <LapChart data={chartData} />
+        </div>
+
+        {/* NOTES */}
+        <div className="p-6 border border-white/5">
+          <h2 className="text-xs uppercase text-zinc-500">
+            Driver Notes
+          </h2>
+
+          <p className="mt-4 text-zinc-300">
+            {session.driver_notes || "No notes recorded."}
+          </p>
+        </div>
       </div>
     </div>
   );
