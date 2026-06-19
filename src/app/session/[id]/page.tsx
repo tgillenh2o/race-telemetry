@@ -59,16 +59,6 @@ export default async function SessionPage({
     redirect("/login");
   }
 
-  const { data: history } = await supabase
-  .from("sessions")
-  .select("*")
-  .eq("user_id", user.id)
-  .eq("track_name", session.track_name)
-  .neq("id", session.id)
-  .order("created_at", { ascending: false })
-  .limit(10);
-
-const pastSessions = (history ?? []) as Session[];
   /* ---------------- SESSION ---------------- */
 
   const { data, error } = await supabase
@@ -84,7 +74,20 @@ const pastSessions = (history ?? []) as Session[];
 
   const session = data as Session;
 
-  /* ---------------- LAPS (FIXED) ---------------- */
+  /* ---------------- HISTORY (for cross-session comparison) ---------------- */
+
+  const { data: history } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("track_name", session.track_name)
+    .neq("id", session.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  const pastSessions = (history ?? []) as Session[];
+
+  /* ---------------- LAPS ---------------- */
 
   const laps = (session.lap_times ?? [])
     .map(parseLap)
@@ -104,142 +107,143 @@ const pastSessions = (history ?? []) as Session[];
   }));
 
   const spread =
-  laps.length > 1
-    ? Math.max(...laps) - Math.min(...laps)
-    : 0;
+    laps.length > 1
+      ? Math.max(...laps) - Math.min(...laps)
+      : 0;
 
-const spreadPct = avgLap ? (spread / avgLap) * 100 : 0;
+  const spreadPct = avgLap ? (spread / avgLap) * 100 : 0;
 
-let consistency = "Needs Work";
-if (spreadPct < 1) consistency = "Elite";
-else if (spreadPct < 2) consistency = "Excellent";
-else if (spreadPct < 4) consistency = "Good";
-else if (spreadPct < 7) consistency = "Fair";
+  let consistency = "Needs Work";
+  if (spreadPct < 1) consistency = "Elite";
+  else if (spreadPct < 2) consistency = "Excellent";
+  else if (spreadPct < 4) consistency = "Good";
+  else if (spreadPct < 7) consistency = "Fair";
 
-function getTrend(laps: number[]) {
-  if (laps.length < 4) return null;
+  function getTrend(laps: number[]) {
+    if (laps.length < 4) return null;
 
-  const half = Math.floor(laps.length / 2);
-  const firstHalf = laps.slice(0, half);
-  const secondHalf = laps.slice(-half);
+    const half = Math.floor(laps.length / 2);
+    const firstHalf = laps.slice(0, half);
+    const secondHalf = laps.slice(-half);
 
-  const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+    const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
 
-  const delta = avg(secondHalf) - avg(firstHalf);
-  const deltaPct = (delta / avg(firstHalf)) * 100;
+    const delta = avg(secondHalf) - avg(firstHalf);
+    const deltaPct = (delta / avg(firstHalf)) * 100;
 
-  if (deltaPct > 2) return "fading";
-  if (deltaPct < -2) return "improving";
-  return "stable";
-}
+    if (deltaPct > 2) return "fading";
+    if (deltaPct < -2) return "improving";
+    return "stable";
+  }
 
-const trend = getTrend(laps);
+  const trend = getTrend(laps);
 
-function findOutliers(laps: number[], best: number) {
-  return laps
-    .map((lap, i) => ({ lap, i }))
-    .filter(({ lap }) => lap > best * 1.08);
-}
+  function findOutliers(laps: number[], best: number) {
+    return laps
+      .map((lap, i) => ({ lap, i }))
+      .filter(({ lap }) => lap > best * 1.08);
+  }
 
-const outliers = bestLap ? findOutliers(laps, bestLap) : [];
+  const outliers = bestLap ? findOutliers(laps, bestLap) : [];
+
   function getHistoryStats(pastSessions: Session[]) {
-  const allLaps = pastSessions.flatMap((s) =>
-    (s.lap_times ?? [])
-      .map(parseLap)
-      .filter((v): v is number => v !== null)
-  );
+    const allLaps = pastSessions.flatMap((s) =>
+      (s.lap_times ?? [])
+        .map(parseLap)
+        .filter((v): v is number => v !== null)
+    );
 
-  if (allLaps.length === 0) return null;
+    if (allLaps.length === 0) return null;
 
-  return {
-    historicalBest: Math.min(...allLaps),
-    historicalAvg: allLaps.reduce((a, b) => a + b, 0) / allLaps.length,
-    sessionCount: pastSessions.length,
-  };
-}
-
-const historyStats = getHistoryStats(pastSessions);
-
-function getRecommendation({
-  consistency,
-  trend,
-  outliers,
-  lapCount,
-  weather,
-  tirePressure,
-  shockSetup,
-  bestLap,
-  historyStats,
-}: {
-  consistency: string;
-  trend: string | null;
-  outliers: { lap: number; i: number }[];
-  lapCount: number;
-  weather?: string;
-  tirePressure?: string;
-  shockSetup?: string;
-  bestLap: number | null;
-  historyStats: { historicalBest: number; historicalAvg: number; sessionCount: number } | null;
-}) {
-  if (lapCount < 3) {
-    return "Not enough laps yet for a reliable read. Log a few more.";
+    return {
+      historicalBest: Math.min(...allLaps),
+      historicalAvg: allLaps.reduce((a, b) => a + b, 0) / allLaps.length,
+      sessionCount: pastSessions.length,
+    };
   }
 
-  if (outliers.length > 0) {
-    return `${outliers.length} lap${outliers.length > 1 ? "s" : ""} significantly off pace (lap ${outliers
-      .map((o) => o.i + 1)
-      .join(", ")}) — likely traffic or an off-track moment. Excluding ${outliers.length > 1 ? "those" : "that"}, focus on the remaining trend.`;
-  }
+  const historyStats = getHistoryStats(pastSessions);
 
-  // NEW: cross-session comparison
-  if (historyStats && bestLap !== null) {
-    if (bestLap < historyStats.historicalBest) {
-      const improvement = historyStats.historicalBest - bestLap;
-      return `New best lap at this track — ${improvement.toFixed(2)}s faster than your previous best across ${historyStats.sessionCount} session${historyStats.sessionCount > 1 ? "s" : ""}. Whatever changed, it's working.`;
+  function getRecommendation({
+    consistency,
+    trend,
+    outliers,
+    lapCount,
+    weather,
+    tirePressure,
+    shockSetup,
+    bestLap,
+    historyStats,
+  }: {
+    consistency: string;
+    trend: string | null;
+    outliers: { lap: number; i: number }[];
+    lapCount: number;
+    weather?: string;
+    tirePressure?: string;
+    shockSetup?: string;
+    bestLap: number | null;
+    historyStats: { historicalBest: number; historicalAvg: number; sessionCount: number } | null;
+  }) {
+    if (lapCount < 3) {
+      return "Not enough laps yet for a reliable read. Log a few more.";
     }
 
-    const offPace = bestLap - historyStats.historicalBest;
-    if (offPace > historyStats.historicalBest * 0.03) {
-      return `Best lap this session is ${offPace.toFixed(2)}s off your historical best at this track. Worth comparing today's setup against past sessions that ran faster.`;
+    if (outliers.length > 0) {
+      return `${outliers.length} lap${outliers.length > 1 ? "s" : ""} significantly off pace (lap ${outliers
+        .map((o) => o.i + 1)
+        .join(", ")}) — likely traffic or an off-track moment. Excluding ${outliers.length > 1 ? "those" : "that"}, focus on the remaining trend.`;
     }
-  }
 
-  if (trend === "fading") {
-    const hot = weather && /hot|warm|sunny/i.test(weather);
-    if (tirePressure) {
-      return `Pace dropped off through the session. With tires set at ${tirePressure}${hot ? " in hot conditions" : ""}, this looks like tire heat build-up or wear — consider starting a notch lower on pressure next time out.`;
+    // Cross-session comparison
+    if (historyStats && bestLap !== null) {
+      if (bestLap < historyStats.historicalBest) {
+        const improvement = historyStats.historicalBest - bestLap;
+        return `New best lap at this track — ${improvement.toFixed(2)}s faster than your previous best across ${historyStats.sessionCount} session${historyStats.sessionCount > 1 ? "s" : ""}. Whatever changed, it's working.`;
+      }
+
+      const offPace = bestLap - historyStats.historicalBest;
+      if (offPace > historyStats.historicalBest * 0.03) {
+        return `Best lap this session is ${offPace.toFixed(2)}s off your historical best at this track. Worth comparing today's setup against past sessions that ran faster.`;
+      }
     }
-    return "Pace dropped off through the session — could be tire wear, fuel load, or driver fatigue. Worth checking long-run pace specifically.";
+
+    if (trend === "fading") {
+      const hot = weather && /hot|warm|sunny/i.test(weather);
+      if (tirePressure) {
+        return `Pace dropped off through the session. With tires set at ${tirePressure}${hot ? " in hot conditions" : ""}, this looks like tire heat build-up or wear — consider starting a notch lower on pressure next time out.`;
+      }
+      return "Pace dropped off through the session — could be tire wear, fuel load, or driver fatigue. Worth checking long-run pace specifically.";
+    }
+
+    if (trend === "improving") {
+      return "Pace improved as the session went on — track evolution or driver ramp-up. Early laps may not reflect true potential.";
+    }
+
+    if (consistency === "Elite") {
+      return `Excellent consistency${shockSetup ? ` — current shock setup (${shockSetup}) is working well. Keep it.` : ". Keep this setup."}`;
+    }
+    if (consistency === "Excellent") return "Very consistent session. Minor tuning only.";
+    if (consistency === "Good") return "Car looks good. Focus on repeatability.";
+
+    if (shockSetup) {
+      return `Large lap spread detected. With the current shock setup (${shockSetup}), start there — consider adjusting before changing anything else.`;
+    }
+    return "Large lap spread detected. Work on consistency before setup changes.";
   }
 
-  if (trend === "improving") {
-    return "Pace improved as the session went on — track evolution or driver ramp-up. Early laps may not reflect true potential.";
-  }
+  const recommendation = getRecommendation({
+    consistency,
+    trend,
+    outliers,
+    lapCount: laps.length,
+    weather: session.weather,
+    tirePressure: session.tire_pressure,
+    shockSetup: session.shock_setup,
+    bestLap,
+    historyStats,
+  });
 
-  if (consistency === "Elite") {
-    return `Excellent consistency${shockSetup ? ` — current shock setup (${shockSetup}) is working well. Keep it.` : ". Keep this setup."}`;
-  }
-  if (consistency === "Excellent") return "Very consistent session. Minor tuning only.";
-  if (consistency === "Good") return "Car looks good. Focus on repeatability.";
-
-  if (shockSetup) {
-    return `Large lap spread detected. With the current shock setup (${shockSetup}), start there — consider adjusting before changing anything else.`;
-  }
-  return "Large lap spread detected. Work on consistency before setup changes.";
-}
-
-  
-const recommendation = getRecommendation({
-  consistency,
-  trend,
-  outliers,
-  lapCount: laps.length,
-  weather: session.weather,
-  tirePressure: session.tire_pressure,
-  shockSetup: session.shock_setup,
-  bestLap,
-  historyStats,
-});
   /* ---------------- RENDER ---------------- */
 
   return (
@@ -261,7 +265,7 @@ const recommendation = getRecommendation({
           <p className="text-zinc-500 mt-1">{session.track_name}</p>
         </div>
 
-             {/* RECOMMENDATION */}
+        {/* RECOMMENDATION */}
         <div className="p-6 rounded-xl bg-red-500/5 border border-red-500/20">
           <h2 className="text-sm text-red-400 uppercase tracking-widest">
             Race Engineer
@@ -303,9 +307,7 @@ const recommendation = getRecommendation({
           </div>
         </div>
 
-    
-
-        {/* LAP LIST (THIS FIXES YOUR ISSUE) */}
+        {/* LAP LIST */}
         <div className="p-6 rounded-xl bg-zinc-900">
           <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
             Lap Times
@@ -318,43 +320,46 @@ const recommendation = getRecommendation({
               </p>
             ) : (
               laps.map((lap, i) => (
-              <span className="px-2 py-1 bg-black rounded font-mono text-sm">
-  {formatLap(lap)}
-</span>
-                
+                <span
+                  key={i}
+                  className="px-2 py-1 bg-black rounded font-mono text-sm"
+                >
+                  {formatLap(lap)}
+                </span>
               ))
             )}
           </div>
         </div>
+
         {/* SETUP INFO */}
-<div className="grid gap-4 md:grid-cols-3">
-  <div className="p-6 rounded-xl bg-zinc-900">
-    <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
-      Tire Pressure
-    </h2>
-    <p className="mt-3 text-zinc-300">
-      {session.tire_pressure || "Not recorded"}
-    </p>
-  </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="p-6 rounded-xl bg-zinc-900">
+            <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
+              Tire Pressure
+            </h2>
+            <p className="mt-3 text-zinc-300">
+              {session.tire_pressure || "Not recorded"}
+            </p>
+          </div>
 
-  <div className="p-6 rounded-xl bg-zinc-900">
-    <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
-      Shock Setup
-    </h2>
-    <p className="mt-3 text-zinc-300">
-      {session.shock_setup || "Not recorded"}
-    </p>
-  </div>
+          <div className="p-6 rounded-xl bg-zinc-900">
+            <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
+              Shock Setup
+            </h2>
+            <p className="mt-3 text-zinc-300">
+              {session.shock_setup || "Not recorded"}
+            </p>
+          </div>
 
-  <div className="p-6 rounded-xl bg-zinc-900">
-    <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
-      Weather
-    </h2>
-    <p className="mt-3 text-zinc-300">
-      {session.weather || "Not recorded"}
-    </p>
-  </div>
-</div>
+          <div className="p-6 rounded-xl bg-zinc-900">
+            <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
+              Weather
+            </h2>
+            <p className="mt-3 text-zinc-300">
+              {session.weather || "Not recorded"}
+            </p>
+          </div>
+        </div>
 
         {/* NOTES */}
         <div className="p-6 rounded-xl bg-zinc-900">
@@ -366,8 +371,6 @@ const recommendation = getRecommendation({
             {session.driver_notes || "No notes recorded."}
           </p>
         </div>
-
-     
       </div>
     </div>
   );
