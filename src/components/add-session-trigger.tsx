@@ -5,6 +5,15 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { Session } from "@/types/session";
 
+function formatLap(sec: number) {
+  if (sec === null || sec === undefined || Number.isNaN(sec)) return "—";
+
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 function parseLap(lap: string | number): number | null {
   if (typeof lap === "number") {
     return Number.isFinite(lap) ? lap : null;
