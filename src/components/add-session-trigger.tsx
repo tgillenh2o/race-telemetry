@@ -24,7 +24,11 @@ export function AddSessionTrigger({
 
   useEffect(() => {
     if (session?.lap_times) {
-      setLaps(session.lap_times);
+     setLaps(
+  (session.lap_times ?? [])
+    .map((l) => Number(l))
+    .filter((n) => !isNaN(n))
+);
     }
   }, [session]);
 
