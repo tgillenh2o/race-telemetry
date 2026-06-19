@@ -91,16 +91,9 @@ export default async function SessionPage({
 
   /* ---------------- LAPS ---------------- */
 
-  const laps = (
-    session.lap_times ?? []
-  )
-    .map(parseLap)
-    .filter(
-      (
-        v: number | null
-      ): v is number =>
-        v !== null
-    );
+const laps = (session.lap_times ?? [])
+  .map((lap) => Number(lap))
+  .filter((n) => !isNaN(n));
 
   const bestLap =
     laps.length > 0
