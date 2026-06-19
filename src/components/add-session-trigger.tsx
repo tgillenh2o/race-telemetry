@@ -36,16 +36,7 @@ function parseLap(lap: string | number): number | null {
   return Number.isFinite(v) ? v : null;
 }
 
- async function updateLaps(newLaps: number[]) {
-  if (!session?.id) return;
 
-  await supabase
-    .from("sessions")
-    .update({ lap_times: newLaps })
-    .eq("id", session.id);
-
-  router.refresh();
-}
 
 export function AddSessionTrigger({
   session,
@@ -58,6 +49,17 @@ export function AddSessionTrigger({
   const [loading, setLoading] = useState(false);
 
   const editing = !!session;
+
+   async function updateLaps(newLaps: number[]) {
+  if (!session?.id) return;
+
+  await supabase
+    .from("sessions")
+    .update({ lap_times: newLaps })
+    .eq("id", session.id);
+
+  router.refresh();
+}
 
   // ✅ FIXED STATE (this was missing / broken)
   const [laps, setLaps] = useState<number[]>([]);
