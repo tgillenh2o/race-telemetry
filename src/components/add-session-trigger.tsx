@@ -119,8 +119,8 @@ if (editing) {
               <input name="weather" defaultValue={session?.weather ?? ""} placeholder="Weather" className="w-full p-2 rounded bg-black text-white" />
 
               <textarea
-  name="driver_notes"
-  defaultValue={session?.driver_notes ?? ""}
+  name="notes"
+  defaultValue={session?.notes ?? ""}
   placeholder="Driver Notes"
   className="w-full p-2 rounded bg-black text-white min-h-[100px]"
 />
