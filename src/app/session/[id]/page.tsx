@@ -7,25 +7,25 @@ import { LapChart } from "@/components/lap-chart";
 
 import type { Session } from "@/types/session";
 
-/* ---------------- HELPERS (MATCH HOME PAGE) ---------------- */
+/* ---------------- SAFE LAP PARSER ---------------- */
 
-function parseLap(lap: string | number): number | null {
+function parseLap(lap: string | number | null | undefined): number | null {
+  if (lap === null || lap === undefined) return null;
+
   if (typeof lap === "number") {
     return Number.isFinite(lap) ? lap : null;
   }
 
-  if (!lap) return null;
+  if (typeof lap !== "string") return null;
 
-  if (typeof lap === "string" && lap.includes(":")) {
+  if (lap.includes(":")) {
     const [m, s] = lap.split(":").map(Number);
-
     if (!Number.isFinite(m) || !Number.isFinite(s)) return null;
-
     return m * 60 + s;
   }
 
-  const value = Number(lap);
-  return Number.isFinite(value) ? value : null;
+  const v = Number(lap);
+  return Number.isFinite(v) ? v : null;
 }
 
 function formatLap(sec: number | null) {
@@ -63,7 +63,7 @@ export default async function SessionPage({
 
   const session = data as Session;
 
-  /* ---------------- LAPS (SAFE + CONSISTENT) ---------------- */
+  /* ---------------- NORMALIZED LAPS ---------------- */
 
   const laps = (session.lap_times ?? [])
     .map(parseLap)
@@ -82,14 +82,13 @@ export default async function SessionPage({
     time,
   }));
 
-  /* ---------------- SIMPLE CONSISTENCY ---------------- */
-
   let consistency = "Needs Work";
-
   if (spread < 0.3) consistency = "Elite";
   else if (spread < 0.6) consistency = "Excellent";
   else if (spread < 1) consistency = "Good";
   else if (spread < 2) consistency = "Fair";
+
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -137,34 +136,40 @@ export default async function SessionPage({
 
         </div>
 
-        {/* LAP LIST (FIXED DISPLAY) */}
+        {/* LAP TIMES (THIS FIXES YOUR “NOT SHOWING” ISSUE) */}
         <div className="p-5 border border-white/10 rounded-xl">
           <h2 className="text-sm text-zinc-500 mb-3">Lap Times</h2>
 
           <div className="flex flex-wrap gap-2">
-            {laps.map((lap, i) => (
-              <div
-                key={i}
-                className="px-3 py-1 rounded bg-zinc-800 font-mono"
-              >
-                {formatLap(lap)}
-              </div>
-            ))}
+            {laps.length === 0 ? (
+              <p className="text-zinc-500 text-sm">
+                No lap times recorded
+              </p>
+            ) : (
+              laps.map((lap, i) => (
+                <div
+                  key={i}
+                  className="px-3 py-1 rounded bg-zinc-800 font-mono"
+                >
+                  {formatLap(lap)}
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* ANALYSIS */}
-        <div className="p-6 border border-red-500/10 rounded-xl space-y-3">
+        <div className="p-6 border border-red-500/10 rounded-xl">
           <p className="text-zinc-500 text-xs uppercase tracking-widest">
             Analysis
           </p>
 
-          <p className="text-xl">
+          <p className="text-xl mt-3">
             Consistency:{" "}
             <span className="text-red-400">{consistency}</span>
           </p>
 
-          <p className="text-zinc-400">
+          <p className="text-zinc-400 mt-2">
             Spread: {spread.toFixed(2)} sec
           </p>
         </div>
@@ -174,12 +179,13 @@ export default async function SessionPage({
           <p className="text-zinc-500 text-xs uppercase tracking-widest">
             Driver Notes
           </p>
+
           <p className="mt-3 text-zinc-300">
             {session.driver_notes || "No notes recorded."}
           </p>
         </div>
 
-        {/* 🚨 GRAPH MOVED TO BOTTOM (AS REQUESTED) */}
+        {/* GRAPH (BOTTOM AS REQUESTED) */}
         <div className="p-6 border border-white/10 rounded-xl">
           <h2 className="text-xs uppercase tracking-widest text-zinc-500">
             Lap Progression
