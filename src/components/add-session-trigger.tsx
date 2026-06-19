@@ -210,13 +210,10 @@ export function AddSessionTrigger({
                         {formatLap(lap)}
                       </span>
 
-                    <button
+                   <button
   type="button"
-  onClick={async () => {
-    const updated = laps.filter((_, idx) => idx !== i);
-    setLaps(updated);
-
-    await updateLaps(updated);
+  onClick={() => {
+    setLaps((prev) => prev.filter((_, idx) => idx !== i));
   }}
   className="text-red-400"
 >
