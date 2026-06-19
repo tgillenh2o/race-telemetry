@@ -69,8 +69,6 @@ export function AddSessionTrigger({
   router.refresh();
 }
 
-  router.refresh();
-}
 
   // ✅ FIXED STATE (this was missing / broken)
   const [laps, setLaps] = useState<number[]>([]);
