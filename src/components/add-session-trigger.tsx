@@ -50,19 +50,24 @@ export function AddSessionTrigger({
 
   const editing = !!session;
 
-   async function updateLaps(newLaps: number[]) {
+ async function updateLaps(newLaps: number[]) {
   if (!session?.id) return;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("sessions")
     .update({ lap_times: newLaps })
-    .eq("id", session.id);
+    .eq("id", session.id)
+    .select();
+
+  console.log("update result:", { data, error });
 
   if (error) {
-    console.error("Failed to update laps:", error);
-    alert("Failed to delete lap: " + error.message);
+    alert("Delete failed: " + error.message);
     return;
   }
+
+  router.refresh();
+}
 
   router.refresh();
 }
