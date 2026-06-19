@@ -115,11 +115,6 @@ export default async function SessionPage({
         ) / laps.length
       : null;
 
-  const fastestLapIndex =
-  bestLap !== null ? laps.indexOf(bestLap) + 1 : null;
-
-const slowestLapIndex =
-  laps.length ? laps.indexOf(slowestLap) + 1 : null;
 
   const chartData = laps.map(
     (lap, index) => ({
@@ -129,10 +124,26 @@ const slowestLapIndex =
   );
 /* ---------------- RACE ENGINEER ---------------- */
 
-const fastestLap = bestLap ?? 0;
-const slowestLap = laps.length ? Math.max(...laps) : 0;
+const fastestLap =
+  bestLap ?? 0;
 
-const spread = slowestLap - fastestLap;
+const slowestLap =
+  laps.length > 0
+    ? Math.max(...laps)
+    : 0;
+
+const fastestLapIndex =
+  bestLap !== null
+    ? laps.indexOf(bestLap) + 1
+    : null;
+
+const slowestLapIndex =
+  laps.length > 0
+    ? laps.indexOf(slowestLap) + 1
+    : null;
+
+const spread =
+  slowestLap - fastestLap;
 
 let consistency = "Needs Work";
 
@@ -924,9 +935,13 @@ const recommendation =
         Fastest Lap
       </p>
 
-      <p className="mt-2 text-2xl font-mono text-green-400">
-        {formatLap(bestLap)}
-      </p>
+     <p className="mt-2 text-2xl font-mono text-green-400">
+  {formatLap(bestLap)}
+</p>
+
+<p className="mt-1 text-sm text-zinc-500">
+  Lap {fastestLapIndex ?? "—"}
+</p>
     </div>
 
     <div className="rounded-xl border border-white/5 p-4">
@@ -934,9 +949,13 @@ const recommendation =
         Slowest Lap
       </p>
 
-      <p className="mt-2 text-2xl font-mono text-red-400">
-        {formatLap(slowestLap)}
-      </p>
+     <p className="mt-2 text-2xl font-mono text-red-400">
+  {formatLap(slowestLap)}
+</p>
+
+<p className="mt-1 text-sm text-zinc-500">
+  Lap {slowestLapIndex ?? "—"}
+</p>
     </div>
 
     <div className="rounded-xl border border-white/5 p-4">
