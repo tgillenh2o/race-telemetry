@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 import type { Session } from "@/types/session";
-import type { PostgrestError } from "@supabase/supabase-js";
 
 export function AddSessionTrigger({
   session,
@@ -19,6 +18,17 @@ export function AddSessionTrigger({
 
   const editing = !!session;
 
+  // ---------------- LAP STATE (REAL FIX) ----------------
+  const [laps, setLaps] = useState<number[]>([]);
+  const [newLap, setNewLap] = useState("");
+
+  useEffect(() => {
+    if (session?.lap_times) {
+      setLaps(session.lap_times);
+    }
+  }, [session]);
+
+  // ---------------- SUBMIT ----------------
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
   ) {
@@ -34,14 +44,6 @@ export function AddSessionTrigger({
 
       if (!user) return;
 
-      // ---------------- LAP PARSING (jsonb safe) ----------------
-     const lapArray = String(form.get("lap_times") || "")
-  .split(",")
-  .map((l) => l.replace(/[^0-9.]/g, "").trim()) // 🔥 important fix
-  .filter(Boolean)
-  .map(Number)
-  .filter((n) => !isNaN(n));
-      // ---------------- PAYLOAD ----------------
       const payload = {
         user_id: user.id,
 
@@ -56,10 +58,10 @@ export function AddSessionTrigger({
         shock_setup: String(form.get("shock_setup") || ""),
         weather: String(form.get("weather") || ""),
 
-        lap_times: [...lapArray]
+        // 🔥 REAL SOURCE OF TRUTH
+        lap_times: laps,
       };
 
-      // ---------------- SUPABASE CALL ----------------
       let res;
 
       if (editing && session?.id) {
@@ -75,7 +77,7 @@ export function AddSessionTrigger({
           .select();
       }
 
-      const { data, error } = res;
+      const { error } = res;
 
       if (error) {
         console.error(error);
@@ -83,7 +85,7 @@ export function AddSessionTrigger({
         return;
       }
 
-      console.log("Saved session:", data);
+      console.log("Saved session");
     } finally {
       setLoading(false);
       setOpen(false);
@@ -91,6 +93,7 @@ export function AddSessionTrigger({
     }
   }
 
+  // ---------------- UI ----------------
   return (
     <>
       {/* BUTTON */}
@@ -149,13 +152,52 @@ export function AddSessionTrigger({
                 className="w-full p-2 rounded bg-black text-white"
               />
 
-              <input
-                name="lap_times"
-                type="text"
-                defaultValue={session?.lap_times?.join(", ") ?? ""}
-                placeholder="Laptimes: 58.32, 58.10, 57.94"
-                className="w-full p-2 rounded bg-black text-white"
-              />
+              {/* ---------------- LAP EDITOR ---------------- */}
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    value={newLap}
+                    onChange={(e) => setNewLap(e.target.value)}
+                    placeholder="Add lap (e.g. 58.32)"
+                    className="flex-1 p-2 rounded bg-black text-white"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = Number(newLap);
+                      if (!isNaN(val)) {
+                        setLaps([...laps, val]);
+                        setNewLap("");
+                      }
+                    }}
+                    className="px-3 py-2 bg-red-500 rounded text-white"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {laps.map((lap, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 bg-zinc-800 px-3 py-1 rounded"
+                    >
+                      <span>{lap.toFixed(2)}</span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLaps(laps.filter((_, idx) => idx !== i))
+                        }
+                        className="text-red-400"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <input
                 name="tire_pressure"
