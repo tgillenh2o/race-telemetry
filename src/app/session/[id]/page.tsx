@@ -135,6 +135,15 @@ export default async function SessionPage({
           <p className="text-zinc-500 mt-1">{session.track_name}</p>
         </div>
 
+             {/* RECOMMENDATION */}
+        <div className="p-6 rounded-xl bg-red-500/5 border border-red-500/20">
+          <h2 className="text-sm text-red-400 uppercase tracking-widest">
+            Race Engineer
+          </h2>
+
+          <p className="mt-3 text-lg">{recommendation}</p>
+        </div>
+
         {/* STATS */}
         <div className="grid gap-4 md:grid-cols-3">
           <div className="p-4 rounded-xl bg-zinc-900">
@@ -167,6 +176,8 @@ export default async function SessionPage({
             <LapChart data={chartData} />
           </div>
         </div>
+
+    
 
         {/* LAP LIST (THIS FIXES YOUR ISSUE) */}
         <div className="p-6 rounded-xl bg-zinc-900">
@@ -201,14 +212,7 @@ export default async function SessionPage({
           </p>
         </div>
 
-        {/* RECOMMENDATION */}
-        <div className="p-6 rounded-xl bg-red-500/5 border border-red-500/20">
-          <h2 className="text-sm text-red-400 uppercase tracking-widest">
-            Race Engineer
-          </h2>
-
-          <p className="mt-3 text-lg">{recommendation}</p>
-        </div>
+     
       </div>
     </div>
   );
