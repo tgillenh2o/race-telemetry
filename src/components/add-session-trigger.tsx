@@ -23,36 +23,33 @@ export function AddSessionTrigger({
 
   // ✅ ONLY ONE CLEAN LOAD
   useEffect(() => {
-  if (!session?.lap_times) {
+  const raw = session?.lap_times;
+
+  if (!raw) {
     setLaps([]);
     return;
   }
 
-  const raw = session.lap_times;
-
   let parsed: number[] = [];
 
-  // Case 1: already array
+  // 🟢 CASE 1: already array
   if (Array.isArray(raw)) {
-    parsed = raw;
+    parsed = (raw as (string | number)[])
+      .map((v) => Number(v))
+      .filter((n) => Number.isFinite(n));
   }
 
-  // Case 2: Postgres string array "{1,2,3}"
+  // 🟡 CASE 2: Postgres string "{1,2,3}"
   else if (typeof raw === "string") {
     parsed = raw
       .replace(/[{}]/g, "")
       .split(",")
-      .map((v) => Number(v));
+      .map((v) => Number(v))
+      .filter((n) => Number.isFinite(n));
   }
 
-  // Clean final values
-  const clean = parsed.filter(
-    (n) => typeof n === "number" && Number.isFinite(n)
-  );
-
-  setLaps(clean);
+  setLaps(parsed);
 }, [session?.id]);
-
   // ---------------- SUBMIT ----------------
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
