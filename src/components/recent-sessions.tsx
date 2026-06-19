@@ -85,7 +85,7 @@ export function RecentSessions({
 
                   {session.lap_times?.map(
                     (
-                      lap: string,
+                      lap: number,
                       index: number
                     ) => (
                       <span
