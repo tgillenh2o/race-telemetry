@@ -54,7 +54,7 @@ export function AddSessionTrigger({
     };
 
  let data;
-let error;
+ let error: any;
 
 if (editing) {
   const updatePayload = {
