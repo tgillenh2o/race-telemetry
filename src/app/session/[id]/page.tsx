@@ -1010,7 +1010,7 @@ const recommendation =
           </h2>
 
           <p className="mt-4 leading-8 text-zinc-300">
-            {session.notes ||
+            {session.driver_notes ||
               "No notes recorded."}
           </p>
         </div>
