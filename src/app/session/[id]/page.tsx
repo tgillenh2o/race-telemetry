@@ -469,21 +469,7 @@ const recommendation =
 
   <div className="flex items-center gap-3">
 
-    <Link
-      href={`/session/${session.id}/edit`}
-      className="
-        rounded-lg
-        border
-        border-white/10
-        px-4
-        py-2
-        text-sm
-        hover:border-red-500
-        hover:text-red-400
-      "
-    >
-      ✏️ Edit Session
-    </Link>
+
 
     <AddSessionTrigger session={session} />
 
