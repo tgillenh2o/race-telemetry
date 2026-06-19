@@ -7,7 +7,7 @@ export type Session = {
 
   vehicle: string | null;
 
-  notes: string | null;
+  driver_notes: string | null;
   weather: string | null;
 
   tire_pressure: string | null;
@@ -16,4 +16,6 @@ export type Session = {
   driver_name?: string | null;
 
   lap_times: string[] | null;
+  
+  created_at?: string;
 };
