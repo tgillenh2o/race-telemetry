@@ -120,7 +120,7 @@ if (editing) {
 
               <textarea
   name="driver_notes"
-  defaultValue={session?.driver_notes}
+  defaultValue={session?.driver_notes ?? ""}
   placeholder="Driver Notes"
   className="w-full p-2 rounded bg-black text-white min-h-[100px]"
 />
