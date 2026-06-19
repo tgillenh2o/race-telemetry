@@ -36,6 +36,17 @@ function parseLap(lap: string | number): number | null {
   return Number.isFinite(v) ? v : null;
 }
 
+ async function updateLaps(newLaps: number[]) {
+  if (!session?.id) return;
+
+  await supabase
+    .from("sessions")
+    .update({ lap_times: newLaps })
+    .eq("id", session.id);
+
+  router.refresh();
+}
+
 export function AddSessionTrigger({
   session,
 }: {
@@ -118,16 +129,7 @@ export function AddSessionTrigger({
       setLoading(false);
     }
     
-    async function updateLaps(newLaps: number[]) {
-  if (!session?.id) return;
 
-  await supabase
-    .from("sessions")
-    .update({ lap_times: newLaps })
-    .eq("id", session.id);
-
-  router.refresh();
-}
   }
 
   return (
@@ -202,9 +204,11 @@ export function AddSessionTrigger({
 
                     <button
   type="button"
-  onClick={() => {
+  onClick={async () => {
     const updated = laps.filter((_, idx) => idx !== i);
     setLaps(updated);
+
+    await updateLaps(updated);
   }}
   className="text-red-400"
 >
