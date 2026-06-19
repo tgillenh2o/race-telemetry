@@ -117,6 +117,17 @@ export function AddSessionTrigger({
     } finally {
       setLoading(false);
     }
+    
+    async function updateLaps(newLaps: number[]) {
+  if (!session?.id) return;
+
+  await supabase
+    .from("sessions")
+    .update({ lap_times: newLaps })
+    .eq("id", session.id);
+
+  router.refresh();
+}
   }
 
   return (
@@ -191,9 +202,11 @@ export function AddSessionTrigger({
 
                       <button
                         type="button"
-                        onClick={() =>
-                          setLaps((prev) =>
-                            prev.filter((_, idx) => idx !== i)
+                        onClick={async () => {
+  const updated = laps.filter((_, i) => i !== index);
+  setLaps(updated);
+  await updateLaps(updated);
+}}
                           )
                         }
                         className="text-red-400"
