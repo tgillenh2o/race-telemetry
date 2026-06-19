@@ -446,30 +446,49 @@ const recommendation =
       {/* HEADER */}
 
       <div
-        className="
-          flex
-          items-center
-          justify-between
-          border-b
-          border-white/5
-          px-6
-          py-4
-        "
-      >
-        <Link
-          href="/"
-          className="
-            text-sm
-            text-zinc-400
-            hover:text-red-400
-          "
-        >
-          ← Back
-        </Link>
+  className="
+    flex
+    items-center
+    justify-between
+    border-b
+    border-white/5
+    px-6
+    py-4
+  "
+>
+  <Link
+    href="/"
+    className="
+      text-sm
+      text-zinc-400
+      hover:text-red-400
+    "
+  >
+    ← Back
+  </Link>
 
-        <AddSessionTrigger />
-      </div>
+  <div className="flex items-center gap-3">
 
+    <Link
+      href={`/session/${session.id}/edit`}
+      className="
+        rounded-lg
+        border
+        border-white/10
+        px-4
+        py-2
+        text-sm
+        hover:border-red-500
+        hover:text-red-400
+      "
+    >
+      ✏️ Edit Session
+    </Link>
+
+    <AddSessionTrigger />
+
+  </div>
+</div>
       {/* MAIN */}
 
       <div className="mx-auto max-w-6xl p-6 space-y-8">
