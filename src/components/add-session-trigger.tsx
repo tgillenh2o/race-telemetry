@@ -35,13 +35,12 @@ export function AddSessionTrigger({
       if (!user) return;
 
       // ---------------- LAP PARSING (jsonb safe) ----------------
-      const lapArray = String(form.get("lap_times") || "")
-        .split(",")
-        .map((l) => l.trim())
-        .filter(Boolean)
-        .map((l) => Number(l))
-        .filter((n) => !isNaN(n));
-
+     const lapArray = String(form.get("lap_times") || "")
+  .split(",")
+  .map((l) => l.replace(/[^0-9.]/g, "").trim()) // 🔥 important fix
+  .filter(Boolean)
+  .map(Number)
+  .filter((n) => !isNaN(n));
       // ---------------- PAYLOAD ----------------
       const payload = {
         user_id: user.id,
@@ -57,7 +56,7 @@ export function AddSessionTrigger({
         shock_setup: String(form.get("shock_setup") || ""),
         weather: String(form.get("weather") || ""),
 
-        lap_times: lapArray,
+        lap_times: [...lapArray]
       };
 
       // ---------------- SUPABASE CALL ----------------
