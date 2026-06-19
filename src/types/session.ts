@@ -15,7 +15,7 @@ export type Session = {
 
   driver_name?: string | null;
 
-  lap_times: string[] | null;
+  lap_times?: number[];
   
   created_at?: string;
 };
