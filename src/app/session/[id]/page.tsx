@@ -485,7 +485,7 @@ const recommendation =
       ✏️ Edit Session
     </Link>
 
-    <AddSessionTrigger />
+    <AddSessionTrigger session={session} />
 
   </div>
 </div>
