@@ -1,7 +1,14 @@
 import Link from "next/link";
 import type { Session } from "@/types/session";
 
+function formatLap(sec: number) {
+  if (sec === null || sec === undefined || Number.isNaN(sec)) return "—";
 
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
 
 type Props = {
   sessions: Session[];
@@ -84,18 +91,15 @@ export function RecentSessions({
                 <div className="mt-4 flex flex-wrap gap-2">
 
                   {session.lap_times?.map(
-                    (
-                      lap: number,
-                      index: number
-                    ) => (
-                      <span
-                        key={index}
-                        className="rounded-md border border-red-500/20 bg-red-500/10 px-2 py-1 font-mono text-xs text-red-300"
-                      >
-                        {lap}
-                      </span>
-                    )
-                  )}
+  (lap: number, index: number) => (
+    <span
+      key={index}
+      className="rounded-md border border-red-500/20 bg-red-500/10 px-2 py-1 font-mono text-xs text-red-300"
+    >
+      {formatLap(lap)}
+    </span>
+  )
+)}
 
                 </div>
 
