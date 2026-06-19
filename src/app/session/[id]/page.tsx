@@ -138,11 +138,17 @@ function getRecommendation({
   trend,
   outliers,
   lapCount,
+  weather,
+  tirePressure,
+  shockSetup,
 }: {
   consistency: string;
   trend: string | null;
   outliers: { lap: number; i: number }[];
   lapCount: number;
+  weather?: string;
+  tirePressure?: string;
+  shockSetup?: string;
 }) {
   if (lapCount < 3) {
     return "Not enough laps yet for a reliable read. Log a few more.";
@@ -155,6 +161,12 @@ function getRecommendation({
   }
 
   if (trend === "fading") {
+    const hot = weather && /hot|warm|sunny/i.test(weather);
+
+    if (tirePressure) {
+      return `Pace dropped off through the session. With tires set at ${tirePressure}${hot ? " in hot conditions" : ""}, this looks like tire heat build-up or wear — consider starting a notch lower on pressure next time out.`;
+    }
+
     return "Pace dropped off through the session — could be tire wear, fuel load, or driver fatigue. Worth checking long-run pace specifically.";
   }
 
@@ -162,18 +174,29 @@ function getRecommendation({
     return "Pace improved as the session went on — track evolution or driver ramp-up. Early laps may not reflect true potential.";
   }
 
-  if (consistency === "Elite") return "Excellent consistency. Keep this setup.";
+  if (consistency === "Elite") {
+    return `Excellent consistency${shockSetup ? ` — current shock setup (${shockSetup}) is working well. Keep it.` : ". Keep this setup."}`;
+  }
+
   if (consistency === "Excellent") return "Very consistent session. Minor tuning only.";
+
   if (consistency === "Good") return "Car looks good. Focus on repeatability.";
+
+  if (shockSetup) {
+    return `Large lap spread detected. With the current shock setup (${shockSetup}), start there — consider adjusting before changing anything else.`;
+  }
 
   return "Large lap spread detected. Work on consistency before setup changes.";
 }
-
+  
 const recommendation = getRecommendation({
   consistency,
   trend,
   outliers,
   lapCount: laps.length,
+  weather: session.weather,
+  tirePressure: session.tire_pressure,
+  shockSetup: session.shock_setup,
 });
   /* ---------------- RENDER ---------------- */
 
