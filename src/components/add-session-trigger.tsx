@@ -193,7 +193,7 @@ export function AddSessionTrigger({
 
                   {laps.map((lap, i) => (
                     <div
-                      key={i}
+                      key={index}
                       className="flex items-center gap-2 bg-zinc-800 px-3 py-1 rounded"
                     >
                       <span className="font-mono">
