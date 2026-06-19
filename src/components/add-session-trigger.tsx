@@ -3,10 +3,19 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-export function AddSessionTrigger() {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+import type { Session } from "@/types/session";
 
+export function AddSessionTrigger({
+  session,
+}: {
+  session?: Session;
+}) {
+
+
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false); 
+  const editing = !!session;
+  
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -44,9 +53,18 @@ export function AddSessionTrigger() {
     .filter(Boolean),
     };
 
-    const { error } = await supabase
-      .from("sessions")
-      .insert([payload]);
+    let error;
+
+if (editing) {
+  ({ error } = await supabase
+    .from("sessions")
+    .update(payload)
+    .eq("id", session!.id));
+} else {
+  ({ error } = await supabase
+    .from("sessions")
+    .insert([payload]));
+}
 
     if (error) {
       console.error("Insert error:", error);
@@ -66,7 +84,7 @@ export function AddSessionTrigger() {
         onClick={() => setOpen(true)}
         className="px-4 py-2 bg-red-500 text-white rounded-xl"
       >
-        Add Session
+        {editing ? "Edit Session" : "Add Session"}
       </button>
 
       {/* MODAL */}
@@ -76,7 +94,7 @@ export function AddSessionTrigger() {
 
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold">
-                New Session
+               {editing ? "Edit Session" : "New Session"}
               </h2>
 
               <button
@@ -89,28 +107,33 @@ export function AddSessionTrigger() {
 
             <form onSubmit={handleSubmit} className="space-y-3">
 
-              <input name="event_name" placeholder="Event" className="w-full p-2 rounded bg-black text-white" />
-              <input name="track_name" placeholder="Track" className="w-full p-2 rounded bg-black text-white" />
-              <input name="vehicle" placeholder="Vehicle" className="w-full p-2 rounded bg-black text-white" />
+              <input name="event_name" defaultValue={session?.event_name} placeholder="Event" className="w-full p-2 rounded bg-black text-white" />
+              <input name="track_name" defaultValue={session?.track_name} placeholder="Track" className="w-full p-2 rounded bg-black text-white" />
+              <input name="vehicle" defaultValue={session?.vehicle} placeholder="Vehicle" className="w-full p-2 rounded bg-black text-white" />
 
-              <input name="driver_name" placeholder="Driver Name" className="w-full p-2 rounded bg-black text-white" />
-              <input name="lap_times" type="text" placeholder=" Laptimes 58.32, 58.10, 57.94, 58.27" className="w-full p-2 rounded bg-black text-white"/>
+              <input name="driver_name" defaultValue={session?.driver_name} placeholder="Driver Name" className="w-full p-2 rounded bg-black text-white" />
+              <input name="lap_times" type="text" defaultValue={session?.lap_times} placeholder=" Laptimes 58.32, 58.10, 57.94, 58.27" className="w-full p-2 rounded bg-black text-white"/>
 
-              <input name="tire_pressure" placeholder="Tire Pressure" className="w-full p-2 rounded bg-black text-white" />
-              <input name="shock_setup" placeholder="Shock Setup" className="w-full p-2 rounded bg-black text-white" />
-              <input name="weather" placeholder="Weather" className="w-full p-2 rounded bg-black text-white" />
+              <input name="tire_pressure" defaultValue={session?.tire_pressure} placeholder="Tire Pressure" className="w-full p-2 rounded bg-black text-white" />
+              <input name="shock_setup" defaultValue={session?.shock_setup} placeholder="Shock Setup" className="w-full p-2 rounded bg-black text-white" />
+              <input name="weather" defaultValue={session?.weather} placeholder="Weather" className="w-full p-2 rounded bg-black text-white" />
 
               <textarea
-                name="driver_notes"
-                placeholder="Driver Notes"
-                className="w-full p-2 rounded bg-black text-white min-h-[100px]"
-              />
+  name="driver_notes"
+  defaultValue={session?.driver_notes}
+  placeholder="Driver Notes"
+  className="w-full p-2 rounded bg-black text-white min-h-[100px]"
+/>
 
               <button
                 disabled={loading}
                 className="w-full bg-red-500 py-2 rounded text-white"
               >
-                {loading ? "Saving..." : "Save Session"}
+                {loading
+  ? "Saving..."
+  : editing
+  ? "Save Changes"
+  : "Save Session"}
               </button>
             </form>
 
