@@ -51,8 +51,8 @@ export default async function SessionPage({
   /* ---------------- LAPS (NO PARSING SYSTEM) ---------------- */
 
   const laps: number[] = Array.isArray(session.lap_times)
-    ? session.lap_times.filter((n): n is number =>
-        typeof n === "number" && Number.isFinite(n)
+    ? session.lap_times.filter((n: unknown): n is number =>
+  typeof n === "number" && Number.isFinite(n)
       )
     : [];
 
@@ -112,8 +112,8 @@ export default async function SessionPage({
   if (previousSession) {
     const previousLaps: number[] = Array.isArray(previousSession.lap_times)
       ? previousSession.lap_times.filter(
-          (n): n is number =>
-            typeof n === "number" && Number.isFinite(n)
+          (n: unknown): n is number =>
+  typeof n === "number" && Number.isFinite(n)
         )
       : [];
 
