@@ -9,13 +9,6 @@ import type { Session } from "@/types/session";
 
 /* ---------------- HELPERS ---------------- */
 
-function parseLap(lap: unknown): number | null {
-  if (lap === null || lap === undefined) return null;
-
-  const n = Number(lap);
-  return Number.isFinite(n) ? n : null;
-}
-
 function formatLap(sec: number | null) {
   if (sec === null || sec === undefined) return "—";
 
@@ -40,9 +33,7 @@ export default async function SessionPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
   /* ---------------- SESSION ---------------- */
 
@@ -53,18 +44,16 @@ export default async function SessionPage({
     .eq("user_id", user.id)
     .single();
 
-  if (error || !data) {
-    redirect("/");
-  }
+  if (error || !data) redirect("/");
 
   const session = data as Session;
 
-  /* ---------------- NORMALIZED LAPS ---------------- */
+  /* ---------------- LAPS (NO PARSING SYSTEM) ---------------- */
 
   const laps: number[] = Array.isArray(session.lap_times)
-    ? session.lap_times
-        .map(parseLap)
-        .filter((v): v is number => v !== null)
+    ? session.lap_times.filter((n): n is number =>
+        typeof n === "number" && Number.isFinite(n)
+      )
     : [];
 
   const bestLap = laps.length ? Math.min(...laps) : null;
@@ -79,7 +68,7 @@ export default async function SessionPage({
     time: lap,
   }));
 
-  /* ---------------- ENGINEERING LOGIC ---------------- */
+  /* ---------------- ENGINEERING ---------------- */
 
   const slowestLap = laps.length ? Math.max(...laps) : null;
 
@@ -122,9 +111,10 @@ export default async function SessionPage({
 
   if (previousSession) {
     const previousLaps: number[] = Array.isArray(previousSession.lap_times)
-      ? previousSession.lap_times
-          .map(parseLap)
-          .filter((v): v is number => v !== null)
+      ? previousSession.lap_times.filter(
+          (n): n is number =>
+            typeof n === "number" && Number.isFinite(n)
+        )
       : [];
 
     const previousBest =
@@ -169,7 +159,6 @@ export default async function SessionPage({
           <h1 className="text-4xl font-black tracking-[0.2em] text-red-500">
             SESSION
           </h1>
-
           <p className="mt-2 text-zinc-500">{session.track_name}</p>
         </div>
 
@@ -195,7 +184,7 @@ export default async function SessionPage({
           </div>
         </div>
 
-        {/* RACE ENGINEER */}
+        {/* ENGINEER */}
         <div className="p-6 border border-red-500/20">
           <h2 className="text-xs uppercase text-red-400">
             Race Engineer
@@ -217,7 +206,7 @@ export default async function SessionPage({
           <LapChart data={chartData} />
         </div>
 
-        {/* DRIVER NOTES */}
+        {/* NOTES */}
         <div className="p-6 border border-white/5">
           <h2 className="text-xs uppercase text-zinc-500">
             Driver Notes
