@@ -37,25 +37,29 @@ export function AddSessionTrigger({
       return;
     }
 
-    const payload = {
-      user_id: user.id,
+     const lapArray = String(form.get("lap_times") || "")
+  .split(",")
+  .map((l) => l.trim())
+  .filter(Boolean)
+  .map((l) => Number(l))
+  .filter((n) => !isNaN(n));
 
-      event_name: String(form.get("event_name") || ""),
-      track_name: String(form.get("track_name") || ""),
-      vehicle: String(form.get("vehicle") || ""),
+const payload = {
+  user_id: user.id,
 
-      driver_name: String(form.get("driver_name") || ""),
-      driver_notes: String(form.get("driver_notes") || ""),
+  event_name: String(form.get("event_name") || ""),
+  track_name: String(form.get("track_name") || ""),
+  vehicle: String(form.get("vehicle") || ""),
 
-      tire_pressure: String(form.get("tire_pressure") || ""),
-      shock_setup: String(form.get("shock_setup") || ""),
-      weather: String(form.get("weather") || ""),
+  driver_name: String(form.get("driver_name") || ""),
+  driver_notes: String(form.get("driver_notes") || ""),
 
-      lap_times: String(form.get("lap_times") || "")
-        .split(",")
-        .map((lap) => lap.trim())
-        .filter(Boolean),
-    };
+  tire_pressure: String(form.get("tire_pressure") || ""),
+  shock_setup: String(form.get("shock_setup") || ""),
+  weather: String(form.get("weather") || ""),
+
+  lap_times: lapArray,
+};
 
     let data;
     let error: PostgrestError | null = null;
