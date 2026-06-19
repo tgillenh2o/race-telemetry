@@ -5,6 +5,15 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { Session } from "@/types/session";
 
+function formatLap(sec: number) {
+  if (!Number.isFinite(sec)) return "—";
+
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 export function AddSessionTrigger({
   session,
 }: {
@@ -19,37 +28,23 @@ export function AddSessionTrigger({
 
   // ---------------- LAPS STATE ----------------
   const [laps, setLaps] = useState<number[]>([]);
-  const [newLap, setNewLap] = useState("");
 
-  // ✅ ONLY ONE CLEAN LOAD
-  useEffect(() => {
-  const raw = session?.lap_times;
+useEffect(() => {
+  if (!session?.lap_times) return;
 
-  if (!raw) {
-    setLaps([]);
-    return;
-  }
+  const raw = session.lap_times;
 
   let parsed: number[] = [];
 
-  // 🟢 CASE 1: already array
   if (Array.isArray(raw)) {
-    parsed = (raw as (string | number)[])
-      .map((v) => Number(v))
-      .filter((n) => Number.isFinite(n));
-  }
-
-  // 🟡 CASE 2: Postgres string "{1,2,3}"
-  else if (typeof raw === "string") {
     parsed = raw
-      .replace(/[{}]/g, "")
-      .split(",")
       .map((v) => Number(v))
       .filter((n) => Number.isFinite(n));
   }
 
   setLaps(parsed);
-}, [session?.id]);
+}, [session?.id, open]);
+  
   // ---------------- SUBMIT ----------------
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
@@ -179,7 +174,7 @@ export function AddSessionTrigger({
                       className="flex items-center gap-2 bg-zinc-800 px-3 py-1 rounded"
                     >
                       <span className="font-mono">
-                        {lap.toFixed(2)}
+                        {formatLap(lap)}
                       </span>
 
                       <button
