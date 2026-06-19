@@ -25,67 +25,62 @@ export function AddSessionTrigger({
     e.preventDefault();
     setLoading(true);
 
-    const form = new FormData(e.currentTarget);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      console.error("No user");
-      setLoading(false);
-      return;
-    }
-
-     const lapArray = String(form.get("lap_times") || "")
-  .split(",")
-  .map((l) => l.trim())
-  .filter(Boolean)
-  .map((l) => Number(l))
-  .filter((n) => !isNaN(n));
-
-const payload = {
-  user_id: user.id,
-
-  event_name: String(form.get("event_name") || ""),
-  track_name: String(form.get("track_name") || ""),
-  vehicle: String(form.get("vehicle") || ""),
-
-  driver_name: String(form.get("driver_name") || ""),
-  driver_notes: String(form.get("driver_notes") || ""),
-
-  tire_pressure: String(form.get("tire_pressure") || ""),
-  shock_setup: String(form.get("shock_setup") || ""),
-  weather: String(form.get("weather") || ""),
-
-  lap_times: lapArray,
-};
-
-    let data;
-    let error: PostgrestError | null = null;
-
     try {
-     if (editing) {
-  ({ error } = await supabase
-    .from("sessions")
-    .update({
-      ...payload,
-      lap_times: payload.lap_times,
-    })
-    .eq("id", session!.id));
-} else {
-  ({ error } = await supabase
-    .from("sessions")
-    .insert([payload]));
-}
+      const form = new FormData(e.currentTarget);
 
-        data = res.data;
-        error = res.error;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      // ---------------- LAP PARSING (jsonb safe) ----------------
+      const lapArray = String(form.get("lap_times") || "")
+        .split(",")
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l) => Number(l))
+        .filter((n) => !isNaN(n));
+
+      // ---------------- PAYLOAD ----------------
+      const payload = {
+        user_id: user.id,
+
+        event_name: String(form.get("event_name") || ""),
+        track_name: String(form.get("track_name") || ""),
+        vehicle: String(form.get("vehicle") || ""),
+
+        driver_name: String(form.get("driver_name") || ""),
+        driver_notes: String(form.get("driver_notes") || ""),
+
+        tire_pressure: String(form.get("tire_pressure") || ""),
+        shock_setup: String(form.get("shock_setup") || ""),
+        weather: String(form.get("weather") || ""),
+
+        lap_times: lapArray,
+      };
+
+      // ---------------- SUPABASE CALL ----------------
+      let res;
+
+      if (editing && session?.id) {
+        res = await supabase
+          .from("sessions")
+          .update(payload)
+          .eq("id", session.id)
+          .select();
+      } else {
+        res = await supabase
+          .from("sessions")
+          .insert([payload])
+          .select();
       }
+
+      const { data, error } = res;
 
       if (error) {
         console.error(error);
-        alert(error?.message ?? "Unknown error");
+        alert(error.message);
         return;
       }
 
