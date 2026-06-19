@@ -5,13 +5,26 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { Session } from "@/types/session";
 
-function formatLap(sec: number) {
-  if (!Number.isFinite(sec)) return "—";
+function parseLap(lap: string | number): number | null {
+  if (typeof lap === "number") {
+    return Number.isFinite(lap) ? lap : null;
+  }
 
-  const m = Math.floor(sec / 60);
-  const s = Math.round(sec % 60);
+  if (!lap) return null;
 
-  return `${m}:${String(s).padStart(2, "0")}`;
+  const str = String(lap);
+
+  if (str.includes(":")) {
+    const [m, s] = str.split(":").map(Number);
+
+    if (!Number.isFinite(m) || !Number.isFinite(s)) return null;
+
+    return m * 60 + s;
+  }
+
+  const v = Number(str);
+
+  return Number.isFinite(v) ? v : null;
 }
 
 export function AddSessionTrigger({
@@ -26,29 +39,24 @@ export function AddSessionTrigger({
 
   const editing = !!session;
 
-  // ---------------- LAPS STATE ----------------
+  // ✅ FIXED STATE (this was missing / broken)
   const [laps, setLaps] = useState<number[]>([]);
+  const [newLap, setNewLap] = useState("");
 
-useEffect(() => {
-  if (!session?.lap_times) return;
+  // ✅ Load existing laps correctly every time modal opens
+  useEffect(() => {
+    if (!open) return;
 
-  const raw = session.lap_times;
+    const raw = session?.lap_times ?? [];
 
-  let parsed: number[] = [];
+    const parsed = (Array.isArray(raw) ? raw : [])
+      .map(parseLap)
+      .filter((v): v is number => v !== null);
 
-  if (Array.isArray(raw)) {
-    parsed = raw
-      .map((v) => Number(v))
-      .filter((n) => Number.isFinite(n));
-  }
+    setLaps(parsed);
+  }, [open, session?.id]);
 
-  setLaps(parsed);
-}, [session?.id, open]);
-  
-  // ---------------- SUBMIT ----------------
-  async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
 
@@ -63,18 +71,16 @@ useEffect(() => {
 
       const payload = {
         user_id: user.id,
-
         event_name: String(form.get("event_name") || ""),
         track_name: String(form.get("track_name") || ""),
         vehicle: String(form.get("vehicle") || ""),
         driver_name: String(form.get("driver_name") || ""),
         driver_notes: String(form.get("driver_notes") || ""),
-
         tire_pressure: String(form.get("tire_pressure") || ""),
         shock_setup: String(form.get("shock_setup") || ""),
         weather: String(form.get("weather") || ""),
 
-        // ✅ SOURCE OF TRUTH
+        // ✅ single source of truth
         lap_times: laps,
       };
 
@@ -87,10 +93,7 @@ useEffect(() => {
           .eq("id", session.id)
           .select();
       } else {
-        res = await supabase
-          .from("sessions")
-          .insert([payload])
-          .select();
+        res = await supabase.from("sessions").insert([payload]).select();
       }
 
       const { error } = res;
@@ -107,7 +110,6 @@ useEffect(() => {
     }
   }
 
-  // ---------------- UI ----------------
   return (
     <>
       <button
@@ -131,12 +133,12 @@ useEffect(() => {
 
             <form onSubmit={handleSubmit} className="space-y-3">
 
-              <input name="event_name" defaultValue={session?.event_name ?? ""} placeholder="Event" className="w-full p-2 bg-black rounded" />
-              <input name="track_name" defaultValue={session?.track_name ?? ""} placeholder="Track" className="w-full p-2 bg-black rounded" />
-              <input name="vehicle" defaultValue={session?.vehicle ?? ""} placeholder="Vehicle" className="w-full p-2 bg-black rounded" />
-              <input name="driver_name" defaultValue={session?.driver_name ?? ""} placeholder="Driver" className="w-full p-2 bg-black rounded" />
+              <input name="event_name" defaultValue={session?.event_name ?? ""} className="w-full p-2 bg-black rounded" placeholder="Event" />
+              <input name="track_name" defaultValue={session?.track_name ?? ""} className="w-full p-2 bg-black rounded" placeholder="Track" />
+              <input name="vehicle" defaultValue={session?.vehicle ?? ""} className="w-full p-2 bg-black rounded" placeholder="Vehicle" />
+              <input name="driver_name" defaultValue={session?.driver_name ?? ""} className="w-full p-2 bg-black rounded" placeholder="Driver" />
 
-              {/* ---------------- LAP EDITOR ---------------- */}
+              {/* LAP EDITOR */}
               <div>
                 <div className="flex gap-2">
                   <input
@@ -149,8 +151,8 @@ useEffect(() => {
                   <button
                     type="button"
                     onClick={() => {
-                      const val = Number(newLap);
-                      if (Number.isFinite(val)) {
+                      const val = parseLap(newLap as any);
+                      if (val !== null) {
                         setLaps((prev) => [...prev, val]);
                         setNewLap("");
                       }
@@ -161,6 +163,7 @@ useEffect(() => {
                   </button>
                 </div>
 
+                {/* DISPLAY (matches everywhere else) */}
                 <div className="flex flex-wrap gap-2 mt-3">
                   {laps.length === 0 && (
                     <p className="text-zinc-500 text-sm">
@@ -174,7 +177,7 @@ useEffect(() => {
                       className="flex items-center gap-2 bg-zinc-800 px-3 py-1 rounded"
                     >
                       <span className="font-mono">
-                        {formatLap(lap)}
+                        {lap.toFixed(2)}
                       </span>
 
                       <button
@@ -193,15 +196,15 @@ useEffect(() => {
                 </div>
               </div>
 
-              <input name="tire_pressure" defaultValue={session?.tire_pressure ?? ""} placeholder="Tire Pressure" className="w-full p-2 bg-black rounded" />
-              <input name="shock_setup" defaultValue={session?.shock_setup ?? ""} placeholder="Shock Setup" className="w-full p-2 bg-black rounded" />
-              <input name="weather" defaultValue={session?.weather ?? ""} placeholder="Weather" className="w-full p-2 bg-black rounded" />
+              <input name="tire_pressure" defaultValue={session?.tire_pressure ?? ""} className="w-full p-2 bg-black rounded" placeholder="Tire Pressure" />
+              <input name="shock_setup" defaultValue={session?.shock_setup ?? ""} className="w-full p-2 bg-black rounded" placeholder="Shock Setup" />
+              <input name="weather" defaultValue={session?.weather ?? ""} className="w-full p-2 bg-black rounded" placeholder="Weather" />
 
-              <textarea name="driver_notes" defaultValue={session?.driver_notes ?? ""} placeholder="Notes" className="w-full p-2 bg-black rounded min-h-[100px]" />
+              <textarea name="driver_notes" defaultValue={session?.driver_notes ?? ""} className="w-full p-2 bg-black rounded min-h-[100px]" placeholder="Notes" />
 
               <button
                 disabled={loading}
-                className="w-full bg-red-500 py-2 rounded"
+                className="w-full bg-red-500 py-2 rounded text-white"
               >
                 {loading ? "Saving..." : "Save Session"}
               </button>
