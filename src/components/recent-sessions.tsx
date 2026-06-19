@@ -100,7 +100,7 @@ export function RecentSessions({
                 </div>
 
                 {/* NOTES */}
-                {session.notes && (
+                {session.driver_notes && (
                   <p className="mt-4 text-sm text-zinc-400">
                     {session.driver_notes}
                   </p>
