@@ -40,7 +40,7 @@ export function AddSessionTrigger({
       vehicle: form.get("vehicle") || "",
 
       driver_name: form.get("driver_name") || "",
-      driver_notes: form.get("driver_notes") || "",
+      notes: form.get("notes") || "",
 
       tire_pressure: form.get("tire_pressure") || "",
       shock_setup: form.get("shock_setup") || "",
