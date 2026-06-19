@@ -61,7 +61,7 @@ export function RecentSessions({
                     </p>
 
                     <p className="mt-1 text-xs text-zinc-500">
-                      {session.session_date}
+                      {session.created_at}
                     </p>
 
                   </div>
