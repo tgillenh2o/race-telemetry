@@ -284,6 +284,35 @@ const recommendation = getRecommendation({
             )}
           </div>
         </div>
+        {/* SETUP INFO */}
+<div className="grid gap-4 md:grid-cols-3">
+  <div className="p-6 rounded-xl bg-zinc-900">
+    <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
+      Tire Pressure
+    </h2>
+    <p className="mt-3 text-zinc-300">
+      {session.tire_pressure || "Not recorded"}
+    </p>
+  </div>
+
+  <div className="p-6 rounded-xl bg-zinc-900">
+    <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
+      Shock Setup
+    </h2>
+    <p className="mt-3 text-zinc-300">
+      {session.shock_setup || "Not recorded"}
+    </p>
+  </div>
+
+  <div className="p-6 rounded-xl bg-zinc-900">
+    <h2 className="text-sm text-zinc-500 uppercase tracking-widest">
+      Weather
+    </h2>
+    <p className="mt-3 text-zinc-300">
+      {session.weather || "Not recorded"}
+    </p>
+  </div>
+</div>
 
         {/* NOTES */}
         <div className="p-6 rounded-xl bg-zinc-900">
