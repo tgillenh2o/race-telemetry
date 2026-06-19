@@ -22,8 +22,15 @@ export function AddSessionTrigger({
   const [laps, setLaps] = useState<number[]>([]);
   const [newLap, setNewLap] = useState("");
 
- useEffect(() => {
+useEffect(() => {
   if (!session?.lap_times) return;
+
+  const parsed = session.lap_times
+    .map((l) => Number(l))
+    .filter((n) => Number.isFinite(n));
+
+  setLaps(parsed);
+}, [session?.id, open]);
 
   setLaps(
     session.lap_times
