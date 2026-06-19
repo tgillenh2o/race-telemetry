@@ -65,23 +65,19 @@ const payload = {
     let error: PostgrestError | null = null;
 
     try {
-      if (editing && session?.id) {
-        const res = await supabase
-          .from("sessions")
-          .update({
-            ...payload,
-            lap_times: payload.lap_times.map((l) => l.trim()),
-          })
-          .eq("id", session.id)
-          .select();
-
-        data = res.data;
-        error = res.error;
-      } else {
-        const res = await supabase
-          .from("sessions")
-          .insert([payload])
-          .select();
+     if (editing) {
+  ({ error } = await supabase
+    .from("sessions")
+    .update({
+      ...payload,
+      lap_times: payload.lap_times,
+    })
+    .eq("id", session!.id));
+} else {
+  ({ error } = await supabase
+    .from("sessions")
+    .insert([payload]));
+}
 
         data = res.data;
         error = res.error;
