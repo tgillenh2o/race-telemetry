@@ -1,21 +1,19 @@
-export type Session = {
+export interface Session {
   id: string;
+  user_id: string;
 
-  event_name: string | null;
-  track_name: string | null;
-  session_date: string | null;
+  event_name: string;
+  track_name: string;
+  vehicle: string;
 
-  vehicle: string | null;
+  driver_name: string;
+  driver_notes: string;
 
-  driver_notes: string | null;
-  weather: string | null;
+  tire_pressure: string;
+  shock_setup: string;
+  weather: string;
 
-  tire_pressure: string | null;
-  shock_setup: string | null;
+  lap_times: number[];
 
-  driver_name?: string | null;
-
-  lap_times?: number[];
-  
-  created_at?: string;
-};
+  created_at: string;
+}
