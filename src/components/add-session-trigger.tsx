@@ -181,26 +181,37 @@ export function AddSessionTrigger({
                   </button>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {laps.map((lap, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 bg-zinc-800 px-3 py-1 rounded"
-                    >
-                      <span>{lap.toFixed(2)}</span>
+             <div className="flex flex-wrap gap-2">
+  {laps.length === 0 && (
+    <p className="text-zinc-500 text-sm">
+      No lap times added
+    </p>
+  )}
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setLaps(laps.filter((_, idx) => idx !== i))
-                        }
-                        className="text-red-400"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
+  {laps.map((lap, index) => (
+    <div
+      key={index}
+      className="flex items-center gap-2 bg-zinc-800 px-3 py-1 rounded"
+    >
+      <span className="font-mono">
+        {lap.toFixed(2)}
+      </span>
+
+      {/* DELETE BUTTON */}
+      <button
+        type="button"
+        onClick={() => {
+          setLaps((prev) =>
+            prev.filter((_, i) => i !== index)
+          );
+        }}
+        className="text-red-400 hover:text-red-300"
+      >
+        ✕
+      </button>
+    </div>
+  ))}
+</div>
               </div>
 
               {/* LAP LIST */}
