@@ -107,16 +107,16 @@ if (editing) {
 
             <form onSubmit={handleSubmit} className="space-y-3">
 
-              <input name="event_name" defaultValue={session?.event_name} placeholder="Event" className="w-full p-2 rounded bg-black text-white" />
-              <input name="track_name" defaultValue={session?.track_name} placeholder="Track" className="w-full p-2 rounded bg-black text-white" />
-              <input name="vehicle" defaultValue={session?.vehicle} placeholder="Vehicle" className="w-full p-2 rounded bg-black text-white" />
+              <input name="event_name" defaultValue={session?.event_name ?? ""} placeholder="Event" className="w-full p-2 rounded bg-black text-white" />
+              <input name="track_name" defaultValue={session?.track_name ?? ""} placeholder="Track" className="w-full p-2 rounded bg-black text-white" />
+              <input name="vehicle" defaultValue={session?.vehicle ?? ""} placeholder="Vehicle" className="w-full p-2 rounded bg-black text-white" />
 
-              <input name="driver_name" defaultValue={session?.driver_name} placeholder="Driver Name" className="w-full p-2 rounded bg-black text-white" />
-              <input name="lap_times" type="text" defaultValue={session?.lap_times} placeholder=" Laptimes 58.32, 58.10, 57.94, 58.27" className="w-full p-2 rounded bg-black text-white"/>
+              <input name="driver_name" defaultValue={session?.driver_name ?? ""} placeholder="Driver Name" className="w-full p-2 rounded bg-black text-white" />
+              <input name="lap_times" type="text" defaultValue={session?.lap_times?.join(", ") ?? ""} placeholder=" Laptimes 58.32, 58.10, 57.94, 58.27" className="w-full p-2 rounded bg-black text-white"/>
 
-              <input name="tire_pressure" defaultValue={session?.tire_pressure} placeholder="Tire Pressure" className="w-full p-2 rounded bg-black text-white" />
-              <input name="shock_setup" defaultValue={session?.shock_setup} placeholder="Shock Setup" className="w-full p-2 rounded bg-black text-white" />
-              <input name="weather" defaultValue={session?.weather} placeholder="Weather" className="w-full p-2 rounded bg-black text-white" />
+              <input name="tire_pressure" defaultValue={session?.tire_pressure ?? ""} placeholder="Tire Pressure" className="w-full p-2 rounded bg-black text-white" />
+              <input name="shock_setup" defaultValue={session?.shock_setup ?? ""} placeholder="Shock Setup" className="w-full p-2 rounded bg-black text-white" />
+              <input name="weather" defaultValue={session?.weather ?? ""} placeholder="Weather" className="w-full p-2 rounded bg-black text-white" />
 
               <textarea
   name="driver_notes"
