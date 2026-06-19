@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { Session } from "@/types/session";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 export function AddSessionTrigger({
   session,
@@ -54,7 +55,7 @@ export function AddSessionTrigger({
     };
 
  let data;
- let error: any;
+ let error: PostgrestError | null = null;
 
 if (editing) {
   const updatePayload = {
