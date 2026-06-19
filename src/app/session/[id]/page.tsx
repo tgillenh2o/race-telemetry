@@ -7,20 +7,14 @@ import { LapChart } from "@/components/lap-chart";
 
 import type { Session } from "@/types/session";
 
-/* ---------------- LAP NORMALIZER ---------------- */
+/* ---------------- HELPERS ---------------- */
 
-function normalizeLaps(input: unknown): number[] {
-  if (!Array.isArray(input)) return [];
+function parseLap(lap: unknown): number | null {
+  if (lap === null || lap === undefined) return null;
 
-  return input
-    .map((lap) => {
-      const n = typeof lap === "number" ? lap : Number(lap);
-      return Number.isFinite(n) ? n : null;
-    })
-    .filter((v): v is number => v !== null);
+  const n = Number(lap);
+  return Number.isFinite(n) ? n : null;
 }
-
-/* ---------------- FORMAT ---------------- */
 
 function formatLap(sec: number | null) {
   if (sec === null || sec === undefined) return "—";
@@ -46,7 +40,9 @@ export default async function SessionPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) {
+    redirect("/login");
+  }
 
   /* ---------------- SESSION ---------------- */
 
@@ -57,39 +53,40 @@ export default async function SessionPage({
     .eq("user_id", user.id)
     .single();
 
-  if (error || !data) redirect("/");
+  if (error || !data) {
+    redirect("/");
+  }
 
   const session = data as Session;
 
-  /* ---------------- LAPS (SAFE CORE) ---------------- */
+  /* ---------------- NORMALIZED LAPS ---------------- */
 
-  const laps = normalizeLaps(session.lap_times);
+  const laps: number[] = Array.isArray(session.lap_times)
+    ? session.lap_times
+        .map(parseLap)
+        .filter((v): v is number => v !== null)
+    : [];
 
   const bestLap = laps.length ? Math.min(...laps) : null;
 
-  const avgLap = laps.length
-    ? laps.reduce((a, b) => a + b, 0) / laps.length
-    : null;
-
-  const slowestLap = laps.length ? Math.max(...laps) : null;
-
-  const spread =
-    laps.length > 1 && slowestLap !== null && bestLap !== null
-      ? slowestLap - bestLap
-      : 0;
+  const avgLap =
+    laps.length > 0
+      ? laps.reduce((a, b) => a + b, 0) / laps.length
+      : null;
 
   const chartData = laps.map((lap, index) => ({
     lap: index + 1,
     time: lap,
   }));
 
-  const fastestLapIndex =
-    bestLap !== null ? laps.indexOf(bestLap) + 1 : null;
+  /* ---------------- ENGINEERING LOGIC ---------------- */
 
-  const slowestLapIndex =
-    slowestLap !== null ? laps.indexOf(slowestLap) + 1 : null;
+  const slowestLap = laps.length ? Math.max(...laps) : null;
 
-  /* ---------------- RACE ENGINEER ---------------- */
+  const spread =
+    bestLap !== null && slowestLap !== null
+      ? slowestLap - bestLap
+      : 0;
 
   let consistency = "Needs Work";
 
@@ -119,139 +116,117 @@ export default async function SessionPage({
 
   const previousSession = previousSessions?.[0];
 
+  /* ---------------- INTELLIGENCE ---------------- */
+
   let intelligenceMessage = "Not enough session data yet.";
 
   if (previousSession) {
-    const previousLaps = normalizeLaps(previousSession.lap_times);
+    const previousLaps: number[] = Array.isArray(previousSession.lap_times)
+      ? previousSession.lap_times
+          .map(parseLap)
+          .filter((v): v is number => v !== null)
+      : [];
 
     const previousBest =
-      previousLaps.length ? Math.min(...previousLaps) : null;
+      previousLaps.length > 0 ? Math.min(...previousLaps) : null;
 
     if (previousBest !== null && bestLap !== null) {
       const delta = previousBest - bestLap;
 
-      intelligenceMessage =
-        delta > 0
-          ? `You went ${delta.toFixed(2)} seconds faster than your previous session.`
-          : delta < 0
-          ? `You were ${Math.abs(delta).toFixed(2)} seconds slower than your previous session.`
-          : "You matched your previous best lap exactly.";
+      if (delta > 0) {
+        intelligenceMessage = `You went ${delta.toFixed(
+          2
+        )} seconds faster than your previous session.`;
+      } else if (delta < 0) {
+        intelligenceMessage = `You were ${Math.abs(delta).toFixed(
+          2
+        )} seconds slower than your previous session.`;
+      } else {
+        intelligenceMessage =
+          "You matched your previous best lap exactly.";
+      }
     }
   }
 
-  /* ---------------- ALL SESSIONS ---------------- */
-
-  const { data: allSessions } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("user_id", user.id);
-
-  const allBestLaps = (allSessions ?? []).flatMap((s) =>
-    normalizeLaps(s.lap_times)
-  );
-
-  const overallBest =
-    allBestLaps.length ? Math.min(...allBestLaps) : null;
-
-  const isPersonalRecord =
-    bestLap !== null &&
-    overallBest !== null &&
-    bestLap <= overallBest;
-
-  const isConsistent =
-    laps.length > 1 &&
-    Math.max(...laps) - Math.min(...laps) < 2;
-
-  const improvedSession =
-    intelligenceMessage.includes("faster");
-
-  /* ---------------- SETUP INTELLIGENCE ---------------- */
-
-  const tirePressureValue = parseFloat(
-    session.tire_pressure || "0"
-  );
-
-  let setupInsight = "Not enough setup data yet.";
-
-  const sessionsWithPressure = (allSessions ?? []).filter(
-    (s) =>
-      s.tire_pressure &&
-      !isNaN(parseFloat(s.tire_pressure))
-  );
-
-  if (sessionsWithPressure.length >= 3 && bestLap !== null) {
-    const avgPressure =
-      sessionsWithPressure.reduce(
-        (acc, s) =>
-          acc + parseFloat(s.tire_pressure || "0"),
-        0
-      ) / sessionsWithPressure.length;
-
-    if (tirePressureValue > avgPressure + 1) {
-      setupInsight =
-        "Your fastest sessions tend to use lower tire pressures.";
-    } else if (tirePressureValue < avgPressure - 1) {
-      setupInsight =
-        "You may benefit from slightly higher tire pressure for stability.";
-    } else {
-      setupInsight =
-        "Your tire pressure is aligned with your fastest sessions.";
-    }
-  }
-
-  /* ---------------- COMPARISON ---------------- */
-
-  let comparisonData: any = null;
-
-  if (previousSession) {
-    const previousLaps = normalizeLaps(previousSession.lap_times);
-
-    const previousBest =
-      previousLaps.length ? Math.min(...previousLaps) : null;
-
-    comparisonData = {
-      bestLapDelta:
-        bestLap !== null && previousBest !== null
-          ? previousBest - bestLap
-          : null,
-      previousVehicle: previousSession.vehicle ?? "—",
-      previousPressure: previousSession.tire_pressure ?? "—",
-      previousShock: previousSession.shock_setup ?? "—",
-      previousBest,
-    };
-  }
-
-  /* ---------------- UI ---------------- */
+  /* ---------------- RENDER ---------------- */
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* HEADER */}
       <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
-        <Link href="/" className="text-sm text-zinc-400">
+        <Link href="/" className="text-sm text-zinc-400 hover:text-red-400">
           ← Back
         </Link>
 
         <AddSessionTrigger session={session} />
       </div>
 
+      {/* MAIN */}
       <div className="mx-auto max-w-6xl p-6 space-y-8">
-        <h1 className="text-4xl font-black text-red-500">
-          SESSION
-        </h1>
 
-        <p className="text-zinc-500">{session.track_name}</p>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>Best: {formatLap(bestLap)}</div>
-          <div>Avg: {formatLap(avgLap)}</div>
-          <div>Total: {laps.length}</div>
-        </div>
-
+        {/* TITLE */}
         <div>
-          <h2>Driver Notes</h2>
-          <p>{session.driver_notes || "No notes recorded."}</p>
+          <h1 className="text-4xl font-black tracking-[0.2em] text-red-500">
+            SESSION
+          </h1>
+
+          <p className="mt-2 text-zinc-500">{session.track_name}</p>
         </div>
 
-        <LapChart data={chartData} />
+        {/* STATS */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="p-6 border border-red-500/10">
+            <p className="text-zinc-500 text-sm">Best Lap</p>
+            <p className="text-3xl font-mono text-red-400 mt-2">
+              {formatLap(bestLap)}
+            </p>
+          </div>
+
+          <div className="p-6 border border-white/5">
+            <p className="text-zinc-500 text-sm">Average Lap</p>
+            <p className="text-3xl font-mono mt-2">
+              {formatLap(avgLap)}
+            </p>
+          </div>
+
+          <div className="p-6 border border-white/5">
+            <p className="text-zinc-500 text-sm">Total Laps</p>
+            <p className="text-3xl font-mono mt-2">{laps.length}</p>
+          </div>
+        </div>
+
+        {/* RACE ENGINEER */}
+        <div className="p-6 border border-red-500/20">
+          <h2 className="text-xs uppercase text-red-400">
+            Race Engineer
+          </h2>
+
+          <p className="mt-4 text-lg">{recommendation}</p>
+
+          <p className="mt-4 text-red-300">
+            {intelligenceMessage}
+          </p>
+        </div>
+
+        {/* CHART */}
+        <div className="p-6 border border-white/5">
+          <h2 className="text-xs uppercase text-zinc-500">
+            Lap Progression
+          </h2>
+
+          <LapChart data={chartData} />
+        </div>
+
+        {/* DRIVER NOTES */}
+        <div className="p-6 border border-white/5">
+          <h2 className="text-xs uppercase text-zinc-500">
+            Driver Notes
+          </h2>
+
+          <p className="mt-4 text-zinc-300">
+            {session.driver_notes || "No notes recorded."}
+          </p>
+        </div>
       </div>
     </div>
   );
