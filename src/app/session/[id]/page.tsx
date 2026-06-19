@@ -115,6 +115,12 @@ export default async function SessionPage({
         ) / laps.length
       : null;
 
+  const fastestLapIndex =
+  bestLap !== null ? laps.indexOf(bestLap) + 1 : null;
+
+const slowestLapIndex =
+  laps.length ? laps.indexOf(slowestLap) + 1 : null;
+
   const chartData = laps.map(
     (lap, index) => ({
       lap: index + 1,
@@ -888,6 +894,74 @@ const recommendation =
             />
           </div>
         </div>
+
+        {/* LAP ANALYSIS */}
+
+<div
+  className="
+    rounded-2xl
+    border
+    border-white/5
+    bg-zinc-950/40
+    p-6
+  "
+>
+  <h2
+    className="
+      text-xs
+      uppercase
+      tracking-widest
+      text-zinc-500
+    "
+  >
+    Lap Analysis
+  </h2>
+
+  <div className="mt-6 grid gap-4 md:grid-cols-2">
+
+    <div className="rounded-xl border border-white/5 p-4">
+      <p className="text-zinc-500 text-sm">
+        Fastest Lap
+      </p>
+
+      <p className="mt-2 text-2xl font-mono text-green-400">
+        {formatLap(bestLap)}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-white/5 p-4">
+      <p className="text-zinc-500 text-sm">
+        Slowest Lap
+      </p>
+
+      <p className="mt-2 text-2xl font-mono text-red-400">
+        {formatLap(slowestLap)}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-white/5 p-4">
+      <p className="text-zinc-500 text-sm">
+        Average
+      </p>
+
+      <p className="mt-2 text-2xl font-mono">
+        {formatLap(avgLap)}
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-white/5 p-4">
+      <p className="text-zinc-500 text-sm">
+        Lap Spread
+      </p>
+
+      <p className="mt-2 text-2xl font-mono">
+        {spread.toFixed(2)} sec
+      </p>
+    </div>
+
+  </div>
+
+</div>
 
         {/* NOTES */}
 
