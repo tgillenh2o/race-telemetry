@@ -2,34 +2,14 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
+import type { Session } from "@/types/session";
 import { AddSessionTrigger } from "@/components/add-session-trigger";
 import { LapChart } from "@/components/lap-chart";
 
-import type { Session } from "@/types/session";
-
-/* ---------------- SAFE LAP PARSER ---------------- */
-
-function parseLap(lap: string | number | null | undefined): number | null {
-  if (lap === null || lap === undefined) return null;
-
-  if (typeof lap === "number") {
-    return Number.isFinite(lap) ? lap : null;
-  }
-
-  if (typeof lap !== "string") return null;
-
-  if (lap.includes(":")) {
-    const [m, s] = lap.split(":").map(Number);
-    if (!Number.isFinite(m) || !Number.isFinite(s)) return null;
-    return m * 60 + s;
-  }
-
-  const v = Number(lap);
-  return Number.isFinite(v) ? v : null;
-}
+/* ---------------- HELPERS ---------------- */
 
 function formatLap(sec: number | null) {
-  if (sec === null || sec === undefined) return "—";
+  if (!sec && sec !== 0) return "—";
 
   const m = Math.floor(sec / 60);
   const s = Math.round(sec % 60);
@@ -52,24 +32,29 @@ export default async function SessionPage({
 
   if (!user) redirect("/login");
 
-  const { data, error } = await supabase
+  const { data: session, error } = await supabase
     .from("sessions")
     .select("*")
     .eq("id", params.id)
     .eq("user_id", user.id)
     .single();
 
-  if (error || !data) redirect("/");
+  if (error || !session) redirect("/");
 
-  const session = data as Session;
+  const typed = session as Session;
 
-  /* ---------------- NORMALIZED LAPS ---------------- */
+  /* ---------------- NORMALIZE LAPS (NO PARSE LAP) ---------------- */
 
-  const laps = (session.lap_times ?? [])
-    .map(parseLap)
-    .filter((v): v is number => v !== null);
+  const laps: number[] = Array.isArray(typed.lap_times)
+    ? typed.lap_times
+        .map((n) => Number(n))
+        .filter((n) => Number.isFinite(n))
+    : [];
+
+  /* ---------------- CORE STATS ---------------- */
 
   const bestLap = laps.length ? Math.min(...laps) : null;
+
   const avgLap = laps.length
     ? laps.reduce((a, b) => a + b, 0) / laps.length
     : null;
@@ -82,118 +67,137 @@ export default async function SessionPage({
     time,
   }));
 
+  /* ---------------- CONSISTENCY ---------------- */
+
   let consistency = "Needs Work";
+
   if (spread < 0.3) consistency = "Elite";
   else if (spread < 0.6) consistency = "Excellent";
   else if (spread < 1) consistency = "Good";
   else if (spread < 2) consistency = "Fair";
 
+  const recommendation =
+    consistency === "Elite"
+      ? "Excellent consistency. Keep this setup."
+      : consistency === "Excellent"
+      ? "Very consistent session. Minor tuning only."
+      : consistency === "Good"
+      ? "Car looks good. Focus on repeatability."
+      : "Large lap spread detected. Work on consistency before setup changes.";
+
+  /* ---------------- PREVIOUS SESSION ---------------- */
+
+  const { data: previousSessions } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("user_id", user.id)
+    .neq("id", params.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  const prev = previousSessions?.[0];
+
+  const prevLaps: number[] = Array.isArray(prev?.lap_times)
+    ? prev.lap_times.map((n) => Number(n)).filter(Number.isFinite)
+    : [];
+
+  const prevBest = prevLaps.length ? Math.min(...prevLaps) : null;
+
+  const delta =
+    prevBest !== null && bestLap !== null
+      ? prevBest - bestLap
+      : null;
+
+  let insight = "Not enough session data yet.";
+
+  if (delta !== null) {
+    if (delta > 0) insight = `You improved by ${delta.toFixed(2)}s vs last session.`;
+    else if (delta < 0)
+      insight = `You were ${Math.abs(delta).toFixed(2)}s slower than last session.`;
+    else insight = "You matched your previous best.";
+  }
+
   /* ---------------- UI ---------------- */
 
   return (
     <div className="min-h-screen bg-black text-white">
-      
       {/* HEADER */}
-      <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+      <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
         <Link href="/" className="text-sm text-zinc-400 hover:text-red-400">
           ← Back
         </Link>
 
-        <AddSessionTrigger session={session} />
+        <AddSessionTrigger session={typed} />
       </div>
 
-      <div className="mx-auto max-w-6xl p-6 space-y-10">
+      {/* CONTENT */}
+      <div className="mx-auto max-w-6xl p-6 space-y-8">
 
         {/* TITLE */}
         <div>
-          <h1 className="text-3xl font-black text-red-500 tracking-widest">
-            SESSION
-          </h1>
-          <p className="text-zinc-500">{session.track_name}</p>
+          <h1 className="text-3xl font-black text-red-500">SESSION</h1>
+          <p className="text-zinc-500">{typed.track_name}</p>
         </div>
 
         {/* STATS */}
         <div className="grid md:grid-cols-3 gap-4">
 
-          <div className="p-5 rounded-xl border border-red-500/20">
+          <div className="p-5 border border-red-500/10 rounded-xl">
             <p className="text-zinc-500 text-sm">Best Lap</p>
             <p className="text-3xl font-mono text-red-400">
               {formatLap(bestLap)}
             </p>
           </div>
 
-          <div className="p-5 rounded-xl border border-white/10">
-            <p className="text-zinc-500 text-sm">Average Lap</p>
-            <p className="text-3xl font-mono">
-              {formatLap(avgLap)}
-            </p>
+          <div className="p-5 border border-white/10 rounded-xl">
+            <p className="text-zinc-500 text-sm">Average</p>
+            <p className="text-3xl font-mono">{formatLap(avgLap)}</p>
           </div>
 
-          <div className="p-5 rounded-xl border border-white/10">
+          <div className="p-5 border border-white/10 rounded-xl">
             <p className="text-zinc-500 text-sm">Total Laps</p>
             <p className="text-3xl font-mono">{laps.length}</p>
           </div>
 
         </div>
 
-        {/* LAP TIMES (THIS FIXES YOUR “NOT SHOWING” ISSUE) */}
+        {/* INSIGHT */}
         <div className="p-5 border border-white/10 rounded-xl">
-          <h2 className="text-sm text-zinc-500 mb-3">Lap Times</h2>
+          <p className="text-sm text-zinc-500">Insight</p>
+          <p className="mt-2">{insight}</p>
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            {laps.length === 0 ? (
-              <p className="text-zinc-500 text-sm">
-                No lap times recorded
+        {/* LAP ANALYSIS */}
+        <div className="p-5 border border-white/10 rounded-xl">
+          <p className="text-sm text-zinc-500 mb-4">Lap Breakdown</p>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-zinc-500 text-sm">Fastest</p>
+              <p className="text-xl text-green-400 font-mono">
+                {formatLap(bestLap)}
               </p>
-            ) : (
-              laps.map((lap, i) => (
-                <div
-                  key={i}
-                  className="px-3 py-1 rounded bg-zinc-800 font-mono"
-                >
-                  {formatLap(lap)}
-                </div>
-              ))
-            )}
+            </div>
+
+            <div>
+              <p className="text-zinc-500 text-sm">Spread</p>
+              <p className="text-xl font-mono">{spread.toFixed(2)}s</p>
+            </div>
           </div>
         </div>
 
-        {/* ANALYSIS */}
-        <div className="p-6 border border-red-500/10 rounded-xl">
-          <p className="text-zinc-500 text-xs uppercase tracking-widest">
-            Analysis
-          </p>
-
-          <p className="text-xl mt-3">
-            Consistency:{" "}
-            <span className="text-red-400">{consistency}</span>
-          </p>
-
-          <p className="text-zinc-400 mt-2">
-            Spread: {spread.toFixed(2)} sec
+        {/* DRIVER NOTES */}
+        <div className="p-5 border border-white/10 rounded-xl">
+          <p className="text-sm text-zinc-500">Notes</p>
+          <p className="mt-2 text-zinc-300">
+            {typed.driver_notes || "No notes"}
           </p>
         </div>
 
-        {/* NOTES */}
-        <div className="p-6 border border-white/10 rounded-xl">
-          <p className="text-zinc-500 text-xs uppercase tracking-widest">
-            Driver Notes
-          </p>
-
-          <p className="mt-3 text-zinc-300">
-            {session.driver_notes || "No notes recorded."}
-          </p>
-        </div>
-
-        {/* GRAPH (BOTTOM AS REQUESTED) */}
-        <div className="p-6 border border-white/10 rounded-xl">
-          <h2 className="text-xs uppercase tracking-widest text-zinc-500">
-            Lap Progression
-          </h2>
-
-          <div className="mt-6">
-            <LapChart data={chartData} />
-          </div>
+        {/* CHART (BOTTOM OF PAGE AS REQUESTED) */}
+        <div className="p-5 border border-white/10 rounded-xl">
+          <p className="text-sm text-zinc-500 mb-4">Lap Chart</p>
+          <LapChart data={chartData} />
         </div>
 
       </div>
